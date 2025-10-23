@@ -9,6 +9,7 @@ import { SUBMIT_BUTTON, STAGES_CONFIG } from '../../constants';
 import NumberPad from '../../components/NumberPad';
 import StageProgressBar from '../../components/StageProgressBar';
 import HelpButton from '../../components/HelpButton';
+import SidebarToggleButton from '../../components/SidebarToggleButton';
 
 const generateMultiplicationProblem = (stage: number): { a: number, b: number } => {
     let a, b;
@@ -30,7 +31,7 @@ interface MultiplicationDecompositionGameProps {
 const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameProps> = ({ topic, gradeId }) => {
     const navigate = useNavigate();
     const { addCompletedExercise, incrementStreak, resetStreak, recordCompletion } = useProgressStore();
-    const { setHeaderContent, clearHeaderContent, isTestMode } = useUiStore();
+    const { setHeaderContent, clearHeaderContent, isTestMode, sidebarPosition } = useUiStore();
 
     const [stageIndex, setStageIndex] = useState(0);
     const [progressInStage, setProgressInStage] = useState(0);
@@ -222,7 +223,7 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
         const digitBoxClasses = "w-[1.5em] h-[1.5em] flex items-center justify-center font-bold text-2xl sm:text-3xl";
 
         return (
-            <div className="w-full max-w-xs mx-auto font-mono">
+            <div className="w-full max-w-md mx-auto font-mono">
                 <div className="flex justify-end">{num1Digits.map((d, i) => <div key={`sum1-${i}`} className={`${digitBoxClasses} ${d === ' ' ? 'text-transparent' : 'text-brand-primary'}`}>{d}</div>)}</div>
                 <div className="flex justify-end items-center">
                     <div className={digitBoxClasses}>+</div>
@@ -247,7 +248,7 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
     };
 
     return (
-        <div className="w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8">
+        <div className={`w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8 ${sidebarPosition === 'left' ? 'md:flex-row-reverse' : ''}`}>
             <main className="flex-grow flex flex-col relative">
                 <HelpButton operation="multiplication" gameMode="multiplication-decomposition" />
                 <div className="bg-white p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
@@ -277,7 +278,7 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
 
 
                         {/* Step-by-step problem */}
-                        <div className="space-y-4 w-full max-w-sm mx-auto font-sans text-lg sm:text-xl md:text-2xl">
+                        <div className="space-y-4 w-full max-w-lg mx-auto font-sans text-lg sm:text-xl md:text-2xl">
                             {/* Units Step */}
                             <div className="flex items-center justify-between transition-opacity duration-500" style={{ opacity: currentStep >= 0 ? 1 : 0.3 }}>
                                 <span className="text-brand-secondary">{num1Units} × {num2} =</span>
@@ -308,7 +309,8 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
             </main>
 
             <aside className="w-full md:max-w-sm flex-shrink-0">
-                <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col h-full">
+                <div className="relative bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col h-full">
+                    <SidebarToggleButton />
                     <div className="flex-grow flex flex-col justify-center">
                         <NumberPad
                             onNumberClick={handleNumberPadClick}

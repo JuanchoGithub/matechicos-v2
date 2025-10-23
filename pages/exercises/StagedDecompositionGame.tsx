@@ -11,6 +11,7 @@ import DrawingCanvas, { DrawingCanvasRef } from '../../components/DrawingCanvas'
 import StageProgressBar from '../../components/StageProgressBar';
 import { PencilIcon, EraserIcon, ResetIcon } from '../../components/icons';
 import HelpButton from '../../components/HelpButton';
+import SidebarToggleButton from '../../components/SidebarToggleButton';
 
 const generateAdditionProblem = (stage: number): { a: number; b: number } => {
     let a, b;
@@ -55,7 +56,7 @@ interface StagedDecompositionGameProps {
 const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic, gradeId, operation }) => {
     const navigate = useNavigate();
     const { addCompletedExercise, incrementStreak, resetStreak, recordCompletion } = useProgressStore();
-    const { setStatusBarContent, clearStatusBarContent, setHeaderContent, clearHeaderContent, isTestMode } = useUiStore();
+    const { setStatusBarContent, clearStatusBarContent, setHeaderContent, clearHeaderContent, isTestMode, sidebarPosition } = useUiStore();
 
     const [stageIndex, setStageIndex] = useState(0);
     const [progressInStage, setProgressInStage] = useState(0);
@@ -293,7 +294,7 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
         const digitBoxClasses = "w-[1.5em] h-[1.5em] flex items-center justify-center font-bold";
 
         return (
-            <div className="w-full max-w-xs sm:max-w-sm md:max-w-md mx-auto font-mono text-4xl sm:text-5xl md:text-5xl lg:text-6xl">
+            <div className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl mx-auto font-mono text-4xl sm:text-5xl md:text-5xl lg:text-6xl">
                 <div className="flex justify-end">{num1Digits.map((d, i) => <div key={`num1-${i}`} className={`${digitBoxClasses} ${d === ' ' ? 'text-transparent' : ''}`}>{d}</div>)}</div>
                 <div className="flex justify-end items-center">
                     <div className={digitBoxClasses}>{operator}</div>
@@ -318,8 +319,8 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
     const instructionText = `Resolvé la siguiente ${instructionTextMap[operation]}:`;
 
     return (
-        <div className="w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8">
-            <main className="flex-grow flex flex-col relative">
+        <div className={`w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8 ${sidebarPosition === 'left' ? 'md:flex-row-reverse' : ''}`}>
+            <main className="flex-grow flex flex-col relative min-w-0">
                 <HelpButton operation={operation} gameMode="staged" />
                 <div className="bg-white p-4 sm:p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
                     <div className="w-full pb-2 mb-4 relative">
@@ -343,7 +344,8 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
             </main>
 
             <aside className="w-full md:max-w-sm flex-shrink-0">
-                <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col h-full">
+                <div className="relative bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col h-full">
+                    <SidebarToggleButton />
                     <div className="flex-grow flex flex-col justify-center">
                         <NumberPad onNumberClick={handleNumberPadClick} onDeleteClick={handleDeleteClick} />
                     </div>

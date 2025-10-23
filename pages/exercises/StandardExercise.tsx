@@ -11,6 +11,7 @@ import HelpButton from '../../components/HelpButton';
 import ProgressionMeter from '../../components/ProgressionMeter';
 import DrawingCanvas, { DrawingCanvasRef } from '../../components/DrawingCanvas';
 import { EraserIcon, PencilIcon, ResetIcon } from '../../components/icons';
+import SidebarToggleButton from '../../components/SidebarToggleButton';
 
 type Operation = 'addition' | 'subtraction' | 'multiplication' | 'division';
 
@@ -50,7 +51,7 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
         getTopicProgress,
         recordCorrectAnswerForTopic
     } = useProgressStore();
-    const { setHeaderContent, clearHeaderContent, setStatusBarContent, clearStatusBarContent, isTestMode } = useUiStore();
+    const { setHeaderContent, clearHeaderContent, setStatusBarContent, clearStatusBarContent, isTestMode, sidebarPosition } = useUiStore();
 
     const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
     const [userAnswer, setUserAnswer] = useState<string>('');
@@ -402,8 +403,8 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
     const showSubmitButton = currentExercise.type !== ExerciseType.WordProblem || wordProblemState.step === 'solve';
 
     return (
-        <div className="w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8">
-            <main className="flex-grow flex flex-col relative">
+        <div className={`w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8 ${sidebarPosition === 'left' ? 'md:flex-row-reverse' : ''}`}>
+            <main className="flex-grow flex flex-col relative min-w-0">
                 {operation && !isEpicProblem && <HelpButton operation={operation} gameMode={isProgressiveWordProblem ? 'word-problem' : undefined} />}
                 {isEpicProblem 
                     ? renderEpicProblemMain()
@@ -411,7 +412,8 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
                 }
             </main>
             <aside className="w-full md:max-w-sm flex-shrink-0">
-                <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col h-full">
+                <div className="relative bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col h-full">
+                    <SidebarToggleButton />
                     <div className="flex-grow flex flex-col justify-center">{renderSidebarContent()}</div>
                     {showSubmitButton && <Button onClick={handleAnswerSubmit} disabled={!userAnswer} className="w-full mt-4">{SUBMIT_BUTTON}</Button>}
                 </div>

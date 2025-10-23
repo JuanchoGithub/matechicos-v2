@@ -10,6 +10,8 @@ interface UiState {
   clearHeaderContent: () => void;
   isTestMode: boolean;
   toggleTestMode: () => void;
+  sidebarPosition: 'left' | 'right';
+  toggleSidebarPosition: () => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -21,4 +23,8 @@ export const useUiStore = create<UiState>((set) => ({
   clearHeaderContent: () => set({ headerContent: null }),
   isTestMode: false,
   toggleTestMode: () => set((state) => ({ isTestMode: !state.isTestMode })),
+  sidebarPosition: 'right', // Default to right side
+  toggleSidebarPosition: () => set((state) => ({
+    sidebarPosition: state.sidebarPosition === 'right' ? 'left' : 'right',
+  })),
 }));

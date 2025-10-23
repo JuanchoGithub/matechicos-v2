@@ -9,6 +9,7 @@ import { SUBMIT_BUTTON, STAGES_CONFIG } from '../../constants';
 import NumberPad from '../../components/NumberPad';
 import StageProgressBar from '../../components/StageProgressBar';
 import HelpButton from '../../components/HelpButton';
+import SidebarToggleButton from '../../components/SidebarToggleButton';
 
 
 const generateDivisionProblem = (stage: number): { a: number, b: number } => {
@@ -37,7 +38,7 @@ const highlightColor2 = 'bg-lime-200';
 const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ topic, gradeId }) => {
     const navigate = useNavigate();
     const { addCompletedExercise, incrementStreak, resetStreak, recordCompletion } = useProgressStore();
-    const { setHeaderContent, clearHeaderContent, isTestMode } = useUiStore();
+    const { setHeaderContent, clearHeaderContent, isTestMode, sidebarPosition } = useUiStore();
 
     const [stageIndex, setStageIndex] = useState(0);
     const [progressInStage, setProgressInStage] = useState(0);
@@ -375,7 +376,7 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
         feedback === 'correct';
 
     return (
-        <div className="w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8">
+        <div className={`w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8 ${sidebarPosition === 'left' ? 'md:flex-row-reverse' : ''}`}>
             <main className="flex-grow flex flex-col relative">
                 <HelpButton operation="division" gameMode="division-decomposition" />
                 <div className="bg-white p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
@@ -473,7 +474,8 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
                 </div>
             </main>
             <aside className="w-full md:max-w-sm flex-shrink-0">
-                <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col h-full">
+                <div className="relative bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col h-full">
+                    <SidebarToggleButton />
                     <div className="flex-grow flex flex-col justify-center">
                         <NumberPad onNumberClick={handleNumberPadClick} onDeleteClick={handleDeleteClick} />
                     </div>

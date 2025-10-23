@@ -7,6 +7,7 @@ import { useProgressStore } from '../store/progressStore';
 import { Topic } from '../types';
 import HelpButton from '../components/HelpButton';
 import { useUiStore } from '../store/uiStore';
+import SidebarToggleButton from '../components/SidebarToggleButton';
 
 const WARMUP_COUNT = 20;
 const WINNING_SCORE = 70;
@@ -106,7 +107,7 @@ const ChallengePage: React.FC = () => {
     const { gradeId, topicId } = useParams();
     const navigate = useNavigate();
     const { incrementStreak, resetStreak, recordCompletion, topicStats } = useProgressStore();
-    const { isTestMode } = useUiStore();
+    const { isTestMode, sidebarPosition } = useUiStore();
 
     const topic = grades.find(g => g.id === gradeId)?.topics.find(t => t.id === topicId);
 
@@ -385,8 +386,8 @@ const ChallengePage: React.FC = () => {
 
 
     return (
-        <div className="w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8">
-            <main className="flex-grow flex flex-col relative">
+        <div className={`w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8 ${sidebarPosition === 'left' ? 'md:flex-row-reverse' : ''}`}>
+            <main className="flex-grow flex flex-col relative min-w-0">
                 <HelpButton operation={operation} gameMode="challenge" />
                 <div className={`bg-white p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col relative transition-all duration-300 ${showTrollEffect ? 'scale-105 shadow-yellow-300/50' : ''} flex-grow`}>
                      {showTrollEffect && <div className="absolute -inset-4 border-4 border-yellow-400 rounded-3xl animate-ping"></div>}
@@ -428,7 +429,8 @@ const ChallengePage: React.FC = () => {
             </main>
 
             <aside className="w-full md:max-w-sm flex-shrink-0">
-                <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col justify-center h-full">
+                <div className="relative bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col justify-center h-full">
+                    <SidebarToggleButton />
                     <input
                         type="text"
                         readOnly

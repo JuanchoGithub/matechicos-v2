@@ -77,3 +77,9 @@ export const LightBulbIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) =>
     <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-4.5c0-2.362-1.683-4.33-4-4.665-2.317-.335-4.516 1.28-4.516 3.916 0 .864.21 1.68.583 2.425a6.01 6.01 0 0 0 1.5 4.5m0 0v5.25m0-5.25a2.25 2.25 0 0 0-2.25 2.25h4.5a2.25 2.25 0 0 0-2.25-2.25Z" />
   </svg>
 );
+
+export const SwitchHorizontalIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h18m-7.5-14L21 6.5m0 0L16.5 11M21 6.5H3" />
+    </svg>
+);
