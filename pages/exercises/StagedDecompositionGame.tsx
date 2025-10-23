@@ -55,7 +55,7 @@ interface StagedDecompositionGameProps {
 const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic, gradeId, operation }) => {
     const navigate = useNavigate();
     const { addCompletedExercise, incrementStreak, resetStreak, recordCompletion } = useProgressStore();
-    const { setStatusBarContent, clearStatusBarContent, setHeaderContent, clearHeaderContent } = useUiStore();
+    const { setStatusBarContent, clearStatusBarContent, setHeaderContent, clearHeaderContent, isTestMode } = useUiStore();
 
     const [stageIndex, setStageIndex] = useState(0);
     const [progressInStage, setProgressInStage] = useState(0);
@@ -223,7 +223,7 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
         const userAnswerNumber = parseInt(userAnswer.join(''), 10);
         let isCorrect = userAnswerNumber === correctAnswer;
 
-        if (topic.id === 'decomposition-addition-test') {
+        if (isTestMode || topic.id === 'decomposition-addition-test') {
             isCorrect = true;
         }
 
@@ -320,7 +320,7 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
     return (
         <div className="w-full flex-grow flex flex-col md:flex-row gap-8">
             <main className="flex-grow flex flex-col relative">
-                <HelpButton operation={operation} />
+                <HelpButton operation={operation} gameMode="staged" />
                 <div className="bg-white p-4 sm:p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
                     <div className="w-full pb-2 mb-4 relative">
                         <p className="text-xl md:text-2xl font-bold text-brand-text">{instructionText}</p>

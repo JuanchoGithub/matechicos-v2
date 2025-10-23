@@ -6,6 +6,7 @@ import NumberPad from '../components/NumberPad';
 import { useProgressStore } from '../store/progressStore';
 import { Topic } from '../types';
 import HelpButton from '../components/HelpButton';
+import { useUiStore } from '../store/uiStore';
 
 const WARMUP_COUNT = 20;
 const WINNING_SCORE = 70;
@@ -105,6 +106,7 @@ const ChallengePage: React.FC = () => {
     const { gradeId, topicId } = useParams();
     const navigate = useNavigate();
     const { incrementStreak, resetStreak, recordCompletion, topicStats } = useProgressStore();
+    const { isTestMode } = useUiStore();
 
     const topic = grades.find(g => g.id === gradeId)?.topics.find(t => t.id === topicId);
 
@@ -124,6 +126,7 @@ const ChallengePage: React.FC = () => {
 
     const [timeLeft, setTimeLeft] = useState(standardDifficultyLevels[0].time);
     const [maxTime, setMaxTime] = useState(standardDifficultyLevels[0].time);
+    const [isTimeResetting, setIsTimeResetting] = useState(false);
 
     const [showTrollEffect, setShowTrollEffect] = useState(false);
     const lastAnswerTimestamp = useRef<number>(0);
@@ -140,6 +143,7 @@ const ChallengePage: React.FC = () => {
         }
         if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
         fastestTime.current = Infinity;
+        setIsTimeResetting(false);
     }, [operation]);
     
     useEffect(() => {
@@ -147,6 +151,15 @@ const ChallengePage: React.FC = () => {
             if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
         };
     }, []);
+
+    useEffect(() => {
+        if (isTimeResetting) {
+            // This timeout allows the DOM to update with the transition disabled,
+            // then re-enables it for the smooth countdown. A short duration is enough.
+            const timer = setTimeout(() => setIsTimeResetting(false), 20);
+            return () => clearTimeout(timer);
+        }
+    }, [isTimeResetting]);
 
     const handleCorrectAnswer = useCallback(() => {
         incrementStreak();
@@ -205,6 +218,7 @@ const ChallengePage: React.FC = () => {
                      recordCompletion(topicId, [], finalStreak);
                  }
             } else {
+                setIsTimeResetting(true);
                 if (!isTrollMode) {
                     const currentLevel = difficultyConfig.slice().reverse().find(level => newScore >= level.scoreThreshold);
                     const newTime = currentLevel!.time;
@@ -237,13 +251,13 @@ const ChallengePage: React.FC = () => {
     }, [gameState, isTrollMode, operation, recordCompletion, resetStreak, topicId, divisionWarmup.phase]);
 
     const checkAnswer = useCallback(() => {
-        if (parseInt(userAnswer, 10) === problem.answer) {
+        if (isTestMode || parseInt(userAnswer, 10) === problem.answer) {
             handleCorrectAnswer();
         } else {
             handleIncorrectAnswer();
         }
         setUserAnswer('');
-    }, [userAnswer, problem.answer, handleCorrectAnswer, handleIncorrectAnswer]);
+    }, [userAnswer, problem.answer, handleCorrectAnswer, handleIncorrectAnswer, isTestMode]);
 
     useEffect(() => {
         if (userAnswer.length > 0 && userAnswer.length >= String(problem.answer).length) {
@@ -373,7 +387,7 @@ const ChallengePage: React.FC = () => {
     return (
         <div className="w-full flex-grow flex flex-col md:flex-row gap-8">
             <main className="flex-grow flex flex-col relative">
-                <HelpButton operation={operation} />
+                <HelpButton operation={operation} gameMode="challenge" />
                 <div className={`bg-white p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col relative transition-all duration-300 ${showTrollEffect ? 'scale-105 shadow-yellow-300/50' : ''} flex-grow`}>
                      {showTrollEffect && <div className="absolute -inset-4 border-4 border-yellow-400 rounded-3xl animate-ping"></div>}
                     
@@ -397,7 +411,10 @@ const ChallengePage: React.FC = () => {
 
                     {gameState === 'playing' && (
                         <div className="w-full bg-gray-200 rounded-full h-4 mb-4 overflow-hidden">
-                            <div className="bg-gradient-to-r from-green-400 to-blue-500 h-4 rounded-full transition-all duration-100 ease-linear" style={{ width: `${(timeLeft / maxTime) * 100}%` }}></div>
+                            <div 
+                                className={`bg-gradient-to-r from-green-400 to-blue-500 h-4 rounded-full ease-linear ${isTimeResetting ? 'transition-none' : 'transition-width duration-100'}`} 
+                                style={{ width: `${(timeLeft / maxTime) * 100}%` }}
+                            ></div>
                         </div>
                     )}
 

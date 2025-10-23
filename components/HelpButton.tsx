@@ -4,13 +4,18 @@ import { QuestionMarkCircleIcon } from './icons';
 
 interface HelpButtonProps {
   operation: 'addition' | 'subtraction' | 'multiplication' | 'division';
+  gameMode?: 'staged' | 'challenge' | 'word-problem' | 'multiplication-decomposition' | 'division-decomposition';
 }
 
-const HelpButton: React.FC<HelpButtonProps> = ({ operation }) => {
+const HelpButton: React.FC<HelpButtonProps> = ({ operation, gameMode }) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    navigate(`/tutorial/${operation}`);
+    let path = `/tutorial/${operation}`;
+    if (gameMode) {
+      path += `/${gameMode}`;
+    }
+    navigate(path);
   };
 
   return (

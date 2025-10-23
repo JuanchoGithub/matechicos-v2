@@ -6,10 +6,153 @@ import { ArrowLeftIcon, LightBulbIcon } from '../components/icons';
 
 type Operation = 'addition' | 'subtraction' | 'multiplication' | 'division';
 
+const GameModeExplanation: React.FC<{ gameMode?: string, operation: Operation }> = ({ gameMode, operation }) => {
+    const defaultContent = (
+        <div>
+            <h2 className="text-xl font-bold text-brand-text mb-2">¿Cómo funciona este ejercicio?</h2>
+            <p>Tu objetivo es simple: ¡resolvé correctamente todos los ejercicios del tema para completarlo! Cada respuesta correcta te acerca más a la victoria. ¡Mucha suerte!</p>
+        </div>
+    );
+
+    if (!gameMode) {
+        return (
+            <div className="bg-amber-100/50 p-4 rounded-2xl font-sans text-left space-y-2 mt-4">
+                {defaultContent}
+            </div>
+        );
+    }
+    
+    let title = "¿Cómo funciona este ejercicio?";
+    let content: React.ReactNode = null;
+
+    switch (gameMode) {
+        case 'staged':
+            title = `¿Cómo funcionan las Fases en ${operation === 'addition' ? 'Suma' : 'Resta'} por Descomposición?`;
+            content = (
+                <ul className="list-disc list-inside space-y-2">
+                    <li>Este desafío te ayuda a practicar {operation === 'addition' ? 'sumas' : 'restas'} "paradas" (verticales) en <strong>3 Fases</strong>.</li>
+                    <li><strong>Fase 1 (F1):</strong> Resolvé 10 cuentas. Serán números de 2 cifras contra números de 1 cifra. ¡Ideal para calentar!</li>
+                    <li><strong>Fase 2 (F2):</strong> La dificultad sube. Ahora son 10 cuentas de números de 2 cifras contra otros de 2 cifras.</li>
+                    <li><strong>Fase 3 (F3):</strong> ¡El desafío final! Tenés que resolver 5 cuentas, ¡pero con <strong>tiempo</strong>! Un reloj aparecerá y tendrás que ser rápido y preciso.</li>
+                    <li>Usá el lápiz para hacer cálculos en la pantalla como si fuera tu cuaderno.</li>
+                    <li>Completá las 3 fases para demostrar que dominás la técnica.</li>
+                </ul>
+            );
+            break;
+        case 'multiplication-decomposition':
+            title = "¿Cómo funciona Multiplicación por Descomposición?";
+            content = (
+                <>
+                    <p className="mb-2">Este juego te enseña a multiplicar descomponiendo los números, ¡un truco de matemáticos expertos! También tiene 3 Fases.</p>
+                    <h3 className="font-bold">El Método:</h3>
+                    <ul className="list-decimal list-inside space-y-1 pl-2 mb-2">
+                        <li><strong>Descomponemos</strong> el número de dos cifras en DECENAS y UNIDADES (ej: 34 se convierte en 30 y 4).</li>
+                        <li><strong>Multiplicamos por separado:</strong> primero las unidades (ej: 4 × 7) y luego las decenas (ej: 30 × 7).</li>
+                        <li><strong>Sumamos los resultados:</strong> Juntamos los dos resultados para obtener la respuesta final.</li>
+                    </ul>
+                    <h3 className="font-bold">Las Fases:</h3>
+                    <ul className="list-disc list-inside space-y-1 pl-2">
+                        <li><strong>Fase 1 (F1):</strong> 10 multiplicaciones usando números del 2 al 5 como multiplicador.</li>
+                        <li><strong>Fase 2 (F2):</strong> 10 multiplicaciones con los números más difíciles: del 6 al 9.</li>
+                        <li><strong>Fase 3 (F3):</strong> ¡El desafío de velocidad! 5 cuentas contra reloj para probar tu maestría.</li>
+                    </ul>
+                </>
+            );
+            break;
+        case 'division-decomposition':
+            title = "¿Cómo funciona Divisiones por Descomposición?";
+            content = (
+                 <>
+                    <p className="mb-2">¡Vamos a dominar la división larga paso a paso! Este juego te guía en cada parte del proceso. También tiene 3 Fases.</p>
+                    <h3 className="font-bold">El Método (División Larga):</h3>
+                    <p className="mb-2">El juego te hará preguntas para cada paso:</p>
+                    <ul className="list-decimal list-inside space-y-1 pl-2 mb-2">
+                        <li>¿Cuántas veces entra el divisor en la primera cifra del dividendo?</li>
+                        <li>Multiplicar ese número por el divisor.</li>
+                        <li>Restar para encontrar el resto.</li>
+                        <li>Bajar la siguiente cifra.</li>
+                        <li>¡Y repetir el proceso hasta terminar!</li>
+                    </ul>
+                    <h3 className="font-bold">Las Fases:</h3>
+                    <ul className="list-disc list-inside space-y-1 pl-2">
+                       <li><strong>Fase 1 (F1):</strong> 10 divisiones con divisores fáciles (del 2 al 5).</li>
+                        <li><strong>Fase 2 (F2):</strong> 10 divisiones con todos los divisores (del 2 al 9).</li>
+                        <li><strong>Fase 3 (F3):</strong> 5 divisiones contra el reloj. ¡A pensar rápido!</li>
+                    </ul>
+                 </>
+            );
+            break;
+        case 'challenge':
+            if (operation === 'division') {
+                title = "¿Cómo funciona el Desafío de División?";
+                content = (
+                    <ul className="list-disc list-inside space-y-2">
+                        <li>Este desafío es especial y tiene una preparación en <strong>3 fases</strong> para que te conviertas en un experto.</li>
+                        <li><strong>Fase de Calentamiento 1:</strong> 10 divisiones de números de 1 cifra por 2.</li>
+                        <li><strong>Fase de Calentamiento 2:</strong> 10 divisiones de números de 2 cifras por 2.</li>
+                        <li><strong>Fase de Calentamiento 3:</strong> 10 divisiones de números de 2 cifras por 3.</li>
+                        <li>Una vez superado el calentamiento, ¡comienza la <strong>prueba de velocidad</strong>!</li>
+                        <li>Tendrás una <strong>barra de tiempo</strong> que baja rápidamente. ¡Respondé antes de que se acabe!</li>
+                        <li>El objetivo es <strong>sobrevivir el mayor tiempo posible</strong> y conseguir la racha más alta.</li>
+                        <li>El juego termina si te equivocás o se te acaba el tiempo.</li>
+                    </ul>
+                );
+            } else {
+                title = "¿Cómo funciona el Desafío de Velocidad?";
+                content = (
+                     <ul className="list-disc list-inside space-y-2">
+                        <li>Primero, tendrás una ronda de <strong>calentamiento de 20 ejercicios</strong> para practicar y entrar en ritmo.</li>
+                        <li>Después, ¡empieza el desafío! Una <strong>barra de tiempo</strong> aparecerá y tendrás que responder antes de que se agote.</li>
+                        <li>Cada respuesta correcta suma 1 punto y reinicia el tiempo.</li>
+                        <li>A medida que sumás puntos, ¡el tiempo para responder se hace <strong>cada vez más corto</strong>!</li>
+                        <li>El objetivo es llegar a <strong>70 puntos</strong> para superar el desafío.</li>
+                        <li>El juego termina si respondés mal o se acaba el tiempo. ¡Concentrate y sé veloz!</li>
+                    </ul>
+                );
+            }
+            break;
+        case 'word-problem':
+            title = "¿Cómo funcionan los Niveles de Problemas?";
+            content = (
+                <>
+                    <p className="mb-2">Este tema te convierte en un detective de las matemáticas, resolviendo problemas con distintos niveles de dificultad.</p>
+                     <p>Para subir de nivel (ej: de Bronce 🥉 a Plata 🥈), tenés que resolver <strong>10 problemas</strong> correctamente.</p>
+                    <h3 className="font-bold mt-2">¿Qué cambia en cada nivel?</h3>
+                    <ul className="list-disc list-inside space-y-1 pl-2 mb-2">
+                        <li><strong>Nivel 1 (Bronce):</strong> Problemas con números de 2 cifras.</li>
+                        <li><strong>Nivel 2 (Plata):</strong> Problemas que mezclan números de 3 cifras y 2 cifras.</li>
+                        <li><strong>Nivel 3 (Oro):</strong> ¡Desafíos con números de 3 cifras!</li>
+                    </ul>
+                    <h3 className="font-bold mt-2">Pasos para resolver:</h3>
+                     <ul className="list-decimal list-inside space-y-1 pl-2">
+                        <li><strong>Elegí los números</strong> importantes del problema.</li>
+                        <li><strong>Decidí la operación</strong> (suma o resta).</li>
+                        <li><strong>Resolvé la cuenta</strong>.</li>
+                    </ul>
+                </>
+            );
+            break;
+        default:
+           return (
+                <div className="bg-amber-100/50 p-4 rounded-2xl font-sans text-left space-y-2 mt-4">
+                    {defaultContent}
+                </div>
+           );
+    }
+
+    return (
+        <div className="bg-amber-100/50 p-4 rounded-2xl font-sans text-left space-y-2 mt-4">
+            <h2 className="text-xl font-bold text-brand-text">{title}</h2>
+            {content}
+        </div>
+    );
+};
+
+
 // New component for the detailed division tutorial
 const DivisionTutorialContent: React.FC = () => {
     return (
-        <div className="bg-white/60 p-4 rounded-2xl font-sans text-left space-y-4 max-w-3xl mx-auto overflow-x-auto">
+        <div className="bg-white/60 p-4 rounded-2xl font-sans text-left space-y-4 max-w-3xl mx-auto overflow-x-auto mt-4">
             <h2 className="text-xl font-bold text-brand-text">Ejemplo: Dividamos 78 caramelos entre 3 amigos (78 ÷ 3)</h2>
             
             <div>
@@ -179,7 +322,7 @@ interface AdditionWizardState {
 }
 
 const TutorialPage: React.FC = () => {
-    const { operation: operationParam } = useParams<'operation'>();
+    const { operation: operationParam, gameMode } = useParams<'operation' | 'gameMode'>();
     const navigate = useNavigate();
 
     const operation = useMemo(() => {
@@ -401,8 +544,9 @@ const TutorialPage: React.FC = () => {
             
             <div className="w-full bg-brand-primary/10 p-4 rounded-3xl">
                 <h1 className="text-2xl md:text-3xl font-extrabold text-brand-primary mb-3 text-center">{explanation.title}</h1>
+                <GameModeExplanation gameMode={gameMode} operation={operation} />
                 {operation === 'division' ? <DivisionTutorialContent /> : (
-                  <ul className="flex flex-wrap justify-center gap-x-4 gap-y-2">
+                  <ul className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4">
                       {explanation.steps.map((step, index) => (
                           <li key={index} className="flex items-center gap-2 bg-white/60 px-3 py-1 rounded-full shadow-sm">
                               <span className="text-lg">✨</span>

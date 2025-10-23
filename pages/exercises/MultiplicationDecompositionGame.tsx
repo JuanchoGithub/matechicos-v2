@@ -30,7 +30,7 @@ interface MultiplicationDecompositionGameProps {
 const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameProps> = ({ topic, gradeId }) => {
     const navigate = useNavigate();
     const { addCompletedExercise, incrementStreak, resetStreak, recordCompletion } = useProgressStore();
-    const { setHeaderContent, clearHeaderContent } = useUiStore();
+    const { setHeaderContent, clearHeaderContent, isTestMode } = useUiStore();
 
     const [stageIndex, setStageIndex] = useState(0);
     const [progressInStage, setProgressInStage] = useState(0);
@@ -135,6 +135,10 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
         } else if (currentStep === 2) {
             const finalAnswerNumber = parseInt(decomposedFinalAnswer.join(''), 10);
             isStepCorrect = finalAnswerNumber === correctFinalAnswer;
+        }
+
+        if (isTestMode) {
+            isStepCorrect = true;
         }
 
         if (isStepCorrect) {
@@ -245,7 +249,7 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
     return (
         <div className="w-full flex-grow flex flex-col md:flex-row gap-8">
             <main className="flex-grow flex flex-col relative">
-                <HelpButton operation="multiplication" />
+                <HelpButton operation="multiplication" gameMode="multiplication-decomposition" />
                 <div className="bg-white p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
                     <div className="flex-grow flex flex-col items-center justify-center font-mono text-2xl sm:text-3xl md:text-4xl space-y-8">
                         {/* Problem statement */}

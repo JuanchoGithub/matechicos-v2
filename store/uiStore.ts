@@ -8,6 +8,8 @@ interface UiState {
   headerContent: React.ReactNode | null;
   setHeaderContent: (content: React.ReactNode | null) => void;
   clearHeaderContent: () => void;
+  isTestMode: boolean;
+  toggleTestMode: () => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -17,4 +19,6 @@ export const useUiStore = create<UiState>((set) => ({
   headerContent: null,
   setHeaderContent: (content) => set({ headerContent: content }),
   clearHeaderContent: () => set({ headerContent: null }),
+  isTestMode: false,
+  toggleTestMode: () => set((state) => ({ isTestMode: !state.isTestMode })),
 }));

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { HashRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import TopicPage from './pages/TopicPage';
@@ -7,11 +7,16 @@ import ChallengePage from './pages/ChallengePage';
 import TutorialPage from './pages/TutorialPage';
 import Header from './components/Header';
 import StatusBar from './components/StatusBar';
+import { useUiStore } from './store/uiStore';
 
 // We need a wrapper component to use react-router hooks
 const AppContent: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isTestMode, toggleTestMode } = useUiStore();
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+
 
   useEffect(() => {
     // This effect ensures that on any reload, the app starts at the homepage.
@@ -24,6 +29,29 @@ const AppContent: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    let sequence: string[] = [];
+    const targetSequence = ['3', '1', '2', '7'];
+
+    const keydownHandler = (e: KeyboardEvent) => {
+      sequence.push(e.key);
+      sequence = sequence.slice(-targetSequence.length);
+
+      if (sequence.join('') === targetSequence.join('')) {
+        toggleTestMode();
+        const message = !isTestMode ? "Modo Prueba Activado" : "Modo Prueba Desactivado";
+        setToastMessage(message);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+        sequence = [];
+      }
+    };
+
+    window.addEventListener('keydown', keydownHandler);
+    return () => window.removeEventListener('keydown', keydownHandler);
+  }, [toggleTestMode, isTestMode]);
+
+
   return (
     <div className="min-h-screen font-sans text-brand-text flex flex-col">
       <Header />
@@ -33,10 +61,15 @@ const AppContent: React.FC = () => {
           <Route path="/grade/:gradeId" element={<TopicPage />} />
           <Route path="/grade/:gradeId/topic/:topicId" element={<ExercisePage />} />
           <Route path="/grade/:gradeId/challenge/:topicId" element={<ChallengePage />} />
-          <Route path="/tutorial/:operation" element={<TutorialPage />} />
+          <Route path="/tutorial/:operation/:gameMode?" element={<TutorialPage />} />
         </Routes>
       </main>
       <StatusBar />
+      {showToast && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-in fade-in zoom-in-90">
+          {toastMessage}
+        </div>
+      )}
     </div>
   );
 };

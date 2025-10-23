@@ -21,6 +21,24 @@ interface StandardExerciseProps {
 
 const STAGE_THRESHOLD = 10;
 
+const BoldParser: React.FC<{ text: string }> = ({ text }) => {
+    // Split on the markdown-style bold delimiter, keeping the delimiter
+    // e.g., "Hello **world**!" -> ["Hello ", "**world**", "!"]
+    const parts = text.split(/(\*\*.*?\*\*)/g).filter(Boolean);
+    return (
+        <>
+            {parts.map((part, i) =>
+                part.startsWith('**') && part.endsWith('**') ? (
+                    <strong key={i}>{part.slice(2, -2)}</strong>
+                ) : (
+                    part
+                )
+            )}
+        </>
+    );
+};
+
+
 const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) => {
     const navigate = useNavigate();
     const { 
@@ -32,7 +50,7 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
         getTopicProgress,
         recordCorrectAnswerForTopic
     } = useProgressStore();
-    const { setHeaderContent, clearHeaderContent, setStatusBarContent, clearStatusBarContent } = useUiStore();
+    const { setHeaderContent, clearHeaderContent, setStatusBarContent, clearStatusBarContent, isTestMode } = useUiStore();
 
     const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
     const [userAnswer, setUserAnswer] = useState<string>('');
@@ -48,7 +66,7 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
 
     const [wordProblemState, setWordProblemState] = useState<{
         step: 'numbers' | 'operation' | 'solve';
-        selectedNumbers: number[];
+        selectedNumbers: { value: number; index: number }[];
         selectedOperation: Operation | null;
     }>({
         step: 'numbers',
@@ -123,20 +141,39 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
 
     useEffect(() => {
         if (currentExercise) {
-            const titleContent = (
-                <div className="flex items-center gap-4">
-                    <h1 className="text-xl md:text-2xl font-bold text-white tracking-wider">{topic.name}</h1>
-                    {!isEpicProblem && (isProgressiveWordProblem || currentExercise.type !== ExerciseType.WordProblem) && (
-                        <div className="text-lg md:text-xl text-yellow-300">
-                            {'⭐'.repeat(currentExercise.difficulty)}
+            let headerContent;
+            if (isProgressiveWordProblem) {
+                headerContent = (
+                    <div className="flex justify-between items-center w-full gap-4">
+                         <div className="flex items-center gap-4 flex-shrink-0">
+                            <h1 className="text-xl md:text-2xl font-bold text-white tracking-wider">{topic.name}</h1>
                         </div>
-                    )}
-                </div>
-            );
-            setHeaderContent(titleContent);
+                        <div className="w-1/2 max-w-sm">
+                            <ProgressionMeter 
+                                stage={topicProgress.stage} 
+                                progress={topicProgress.correctInStage} 
+                                threshold={STAGE_THRESHOLD}
+                                variant="header"
+                            />
+                        </div>
+                    </div>
+                );
+            } else {
+                 headerContent = (
+                    <div className="flex items-center gap-4">
+                        <h1 className="text-xl md:text-2xl font-bold text-white tracking-wider">{topic.name}</h1>
+                        {!isEpicProblem && (currentExercise.type !== ExerciseType.WordProblem) && (
+                            <div className="text-lg md:text-xl text-yellow-300">
+                                {'⭐'.repeat(currentExercise.difficulty)}
+                            </div>
+                        )}
+                    </div>
+                );
+            }
+            setHeaderContent(headerContent);
         }
         return () => clearHeaderContent();
-    }, [topic, currentExercise, setHeaderContent, clearHeaderContent, isProgressiveWordProblem, isEpicProblem]);
+    }, [topic.name, currentExercise, setHeaderContent, clearHeaderContent, isProgressiveWordProblem, isEpicProblem, topicProgress.stage, topicProgress.correctInStage]);
 
     useEffect(() => {
         if (isEpicProblem) {
@@ -161,17 +198,64 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
     const handleAnswerSubmit = () => {
         if (!currentExercise) return;
         let isCorrect = false;
+        let explainer: React.ReactNode = null;
 
-        if (currentExercise.type === ExerciseType.WordProblem) {
+        if (isTestMode) {
+            isCorrect = true;
+        } else if (currentExercise.type === ExerciseType.WordProblem) {
             const wpExercise = currentExercise as WordProblemExercise;
-            const isNumbersCorrect = [...wordProblemState.selectedNumbers].sort((a, b) => a - b).toString() === [...wpExercise.numbers].sort((a, b) => a - b).toString();
-            const isOperationCorrect = wordProblemState.selectedOperation === wpExercise.operation;
-            const isAnswerCorrect = parseInt(userAnswer, 10) === wpExercise.answer;
-            isCorrect = isNumbersCorrect && isOperationCorrect && isAnswerCorrect;
+            const selectedNumberValues = wordProblemState.selectedNumbers.map(s => s.value);
+
+            if (selectedNumberValues.length !== wpExercise.numbers.length) {
+                isCorrect = false;
+                explainer = (
+                    <div className="space-y-2">
+                        <p>¡Cuidado! Parece que elegiste una cantidad incorrecta de números.</p>
+                        <p>Este problema necesita <strong>{wpExercise.numbers.length} números</strong> para resolverse, pero elegiste {selectedNumberValues.length}.</p>
+                        <p className="pt-2 border-t border-white/30 mt-2">Los números correctos eran <strong>{wpExercise.numbers.join(' y ')}</strong>.</p>
+                    </div>
+                );
+            } else {
+                const isNumbersCorrect = [...selectedNumberValues].sort((a, b) => a - b).toString() === [...wpExercise.numbers].sort((a, b) => a - b).toString();
+                if (!isNumbersCorrect) {
+                    isCorrect = false;
+                    explainer = (
+                        <div className="space-y-2">
+                            <p>¡Ojo! Uno de los números que elegiste no era el correcto.</p>
+                            <p>Elegiste {selectedNumberValues.join(' y ')}, pero los números que necesitabas eran <strong>{wpExercise.numbers.join(' y ')}</strong>.</p>
+                            <p className="pt-2 border-t border-white/30 mt-2"><BoldParser text={wpExercise.explanation} /></p>
+                        </div>
+                    );
+                } else {
+                    const isOperationCorrect = wordProblemState.selectedOperation === wpExercise.operation;
+                    const isAnswerCorrect = parseInt(userAnswer, 10) === wpExercise.answer;
+                    isCorrect = isOperationCorrect && isAnswerCorrect;
+
+                    if (!isCorrect) {
+                        explainer = (
+                            <div className="space-y-2">
+                                <p>¡Los números que elegiste son correctos! Pero algo falló en la operación o en el resultado final.</p>
+                                <p className="pt-2 border-t border-white/30 mt-2"><BoldParser text={wpExercise.explanation} /></p>
+                            </div>
+                        );
+                    }
+                }
+            }
         } else if (currentExercise.type === ExerciseType.EpicWordProblem || currentExercise.type === ExerciseType.NumberInput) {
             isCorrect = parseInt(userAnswer, 10) === currentExercise.answer;
+            if (!isCorrect) {
+                if (currentExercise.type === ExerciseType.EpicWordProblem) {
+                    const wp = currentExercise;
+                    explainer = ( <div className="space-y-2"> <p>¡No te preocupes! Analicemos el problema:</p> <p className="bg-white/10 p-2 rounded italic">"{wp.problemText}"</p> <p><BoldParser text={wp.explanation} /></p> </div> );
+                } else {
+                    explainer = <p>La respuesta correcta era <strong>{currentExercise.answer}</strong>.</p>;
+                }
+            }
         } else if (currentExercise.type === ExerciseType.MultipleChoice) {
             isCorrect = userAnswer === (currentExercise as MultipleChoiceExercise).answer;
+            if (!isCorrect) {
+                explainer = <p>La respuesta correcta era <strong>"{currentExercise.answer}"</strong>.</p>;
+            }
         }
 
         if (isCorrect) {
@@ -184,29 +268,16 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
         } else {
             setFeedback('incorrect');
             resetStreak();
-            
-            let explainer: React.ReactNode = null;
-            if (currentExercise.type === ExerciseType.NumberInput) {
-                explainer = <p>La respuesta correcta era <strong>{currentExercise.answer}</strong>.</p>;
-            } else if (currentExercise.type === ExerciseType.MultipleChoice) {
-                explainer = <p>La respuesta correcta era <strong>"{currentExercise.answer}"</strong>.</p>;
-            } else if (currentExercise.type === ExerciseType.WordProblem || currentExercise.type === ExerciseType.EpicWordProblem) {
-                const wp = currentExercise;
-                explainer = (
-                    <div className="space-y-2">
-                        <p>¡No te preocupes! Analicemos el problema:</p>
-                        <p className="bg-white/10 p-2 rounded italic">"{wp.problemText}"</p>
-                        <p>{wp.explanation}</p>
-                    </div>
-                );
-            }
             setExplanation(explainer);
         }
     };
 
-    const toggleNumberSelection = (num: number) => {
+    const toggleNumberSelection = (num: number, index: number) => {
         setWordProblemState(prev => {
-            const newSelected = prev.selectedNumbers.includes(num) ? prev.selectedNumbers.filter(n => n !== num) : [...prev.selectedNumbers, num];
+            const isAlreadySelected = prev.selectedNumbers.some(sel => sel.index === index);
+            const newSelected = isAlreadySelected
+                ? prev.selectedNumbers.filter(sel => sel.index !== index)
+                : [...prev.selectedNumbers, { value: num, index }];
             return { ...prev, selectedNumbers: newSelected };
         });
     };
@@ -241,10 +312,11 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
             const wpExercise = currentExercise as WordProblemExercise;
             
             if (wordProblemState.step === 'solve') {
-                const [numA, numB] = [...wordProblemState.selectedNumbers].sort((a, b) => b - a);
+                const selectedValues = wordProblemState.selectedNumbers.map(sel => sel.value);
+                const [numA, numB] = [...selectedValues].sort((a, b) => b - a);
                 const operationSymbols = { addition: '+', subtraction: '-', multiplication: '×', division: '÷' };
                 const symbol = operationSymbols[wordProblemState.selectedOperation!];
-                return ( <div className="text-6xl font-extrabold tracking-wider">{`${numA} ${symbol} ${numB} = ?`}</div> );
+                return ( <div className="text-6xl font-extrabold tracking-wider">{`${numA} ${symbol} ${numB || ''} = ?`}</div> );
             }
 
             const parts = wpExercise.problemText.split(/(\d+)/g).filter(Boolean);
@@ -253,9 +325,9 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
                     {parts.map((part, index) => {
                         if (/\d+/.test(part)) {
                             const num = parseInt(part, 10);
-                            const isSelected = wordProblemState.selectedNumbers.includes(num);
+                            const isSelected = wordProblemState.selectedNumbers.some(sel => sel.index === index);
                             return (
-                                <span key={index} onClick={() => wordProblemState.step === 'numbers' && toggleNumberSelection(num)}
+                                <span key={index} onClick={() => wordProblemState.step === 'numbers' && toggleNumberSelection(num, index)}
                                     className={`p-1 rounded-lg transition-all duration-300 ${wordProblemState.step === 'numbers' ? 'cursor-pointer hover:bg-yellow-200' : ''} ${isSelected ? 'bg-brand-secondary text-white ring-2 ring-yellow-400' : 'bg-gray-100'}`}>
                                     {part}
                                 </span>
@@ -277,9 +349,9 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
                     <div className="flex flex-col h-full"><h3 className="text-xl font-bold mb-2 text-center">1. Elegí los números</h3>
                         <div className="flex-grow bg-gray-100 rounded-lg p-4 mb-4 text-center">
                             <p className="text-gray-600 mb-2">Números elegidos:</p>
-                            <div className="text-3xl font-bold h-12">{wordProblemState.selectedNumbers.join(', ')}</div>
+                            <div className="text-3xl font-bold h-12">{wordProblemState.selectedNumbers.map(sel => sel.value).join(', ')}</div>
                         </div>
-                        <Button onClick={() => setWordProblemState(prev => ({ ...prev, step: 'operation' }))} disabled={wordProblemState.selectedNumbers.length !== wpExercise.numbers.length}>Siguiente</Button>
+                        <Button onClick={() => setWordProblemState(prev => ({ ...prev, step: 'operation' }))} disabled={wordProblemState.selectedNumbers.length < 2}>Siguiente</Button>
                     </div>);
                 case 'operation':
                     const operations: { op: Operation, symbol: string }[] = [{ op: 'addition', symbol: '+' }, { op: 'subtraction', symbol: '-' }];
@@ -330,25 +402,22 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
     const showSubmitButton = currentExercise.type !== ExerciseType.WordProblem || wordProblemState.step === 'solve';
 
     return (
-        <div className="w-full flex-grow flex flex-col gap-4">
-            {isProgressiveWordProblem && <ProgressionMeter stage={topicProgress.stage} progress={topicProgress.correctInStage} threshold={STAGE_THRESHOLD} />}
-            <div className="w-full flex-grow flex flex-col md:flex-row gap-8">
-                <main className="flex-grow flex flex-col relative">
-                    {operation && !isEpicProblem && <HelpButton operation={operation} />}
-                    {isEpicProblem 
-                        ? renderEpicProblemMain()
-                        : <div className="bg-white p-8 rounded-3xl shadow-2xl text-center flex flex-col items-center justify-center flex-grow">{renderMainContent()}</div>
-                    }
-                </main>
-                <aside className="w-full md:max-w-sm flex-shrink-0">
-                    <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col h-full">
-                        <div className="flex-grow flex flex-col justify-center">{renderSidebarContent()}</div>
-                        {showSubmitButton && <Button onClick={handleAnswerSubmit} disabled={!userAnswer} className="w-full mt-4">{SUBMIT_BUTTON}</Button>}
-                    </div>
-                </aside>
-                {feedback === 'correct' && <FeedbackModal isCorrect={true} onNext={pickNextExercise} />}
-                {feedback === 'incorrect' && <FeedbackModal isCorrect={false} onNext={handleIncorrectFeedbackClose} explanation={explanation} />}
-            </div>
+        <div className="w-full flex-grow flex flex-col md:flex-row gap-8">
+            <main className="flex-grow flex flex-col relative">
+                {operation && !isEpicProblem && <HelpButton operation={operation} gameMode={isProgressiveWordProblem ? 'word-problem' : undefined} />}
+                {isEpicProblem 
+                    ? renderEpicProblemMain()
+                    : <div className="bg-white p-8 rounded-3xl shadow-2xl text-center flex flex-col items-center justify-center flex-grow">{renderMainContent()}</div>
+                }
+            </main>
+            <aside className="w-full md:max-w-sm flex-shrink-0">
+                <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col h-full">
+                    <div className="flex-grow flex flex-col justify-center">{renderSidebarContent()}</div>
+                    {showSubmitButton && <Button onClick={handleAnswerSubmit} disabled={!userAnswer} className="w-full mt-4">{SUBMIT_BUTTON}</Button>}
+                </div>
+            </aside>
+            {feedback === 'correct' && <FeedbackModal isCorrect={true} onNext={pickNextExercise} />}
+            {feedback === 'incorrect' && <FeedbackModal isCorrect={false} onNext={handleIncorrectFeedbackClose} explanation={explanation} />}
         </div>
     );
 };

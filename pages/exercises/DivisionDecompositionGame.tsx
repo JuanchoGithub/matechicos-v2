@@ -37,7 +37,7 @@ const highlightColor2 = 'bg-lime-200';
 const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ topic, gradeId }) => {
     const navigate = useNavigate();
     const { addCompletedExercise, incrementStreak, resetStreak, recordCompletion } = useProgressStore();
-    const { setHeaderContent, clearHeaderContent } = useUiStore();
+    const { setHeaderContent, clearHeaderContent, isTestMode } = useUiStore();
 
     const [stageIndex, setStageIndex] = useState(0);
     const [progressInStage, setProgressInStage] = useState(0);
@@ -221,6 +221,9 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
             if (finalQuotientInput.some(d => d === '')) return;
             const userAnswerNumber = parseInt(finalQuotientInput.join(''), 10);
             isCorrect = userAnswerNumber === correctFinalQuotient;
+            
+            if (isTestMode) isCorrect = true;
+
             if (isCorrect) {
                 incrementStreak();
                 addCompletedExercise(`${topic.id}-${stageIndex}-${progressInStage}`);
@@ -260,6 +263,8 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
                 if(isCorrect) setFinalRemainder(userAnswerNumber);
                 break;
         }
+
+        if (isTestMode) isCorrect = true;
 
         if (isCorrect) {
             const nextStep = step + 1;
@@ -372,7 +377,7 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
     return (
         <div className="w-full flex-grow flex flex-col md:flex-row gap-8">
             <main className="flex-grow flex flex-col relative">
-                <HelpButton operation="division" />
+                <HelpButton operation="division" gameMode="division-decomposition" />
                 <div className="bg-white p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
                     
                     {/* Interactive prompt */}
