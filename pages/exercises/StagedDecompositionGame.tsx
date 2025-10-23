@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Topic } from '../../types';
 import { useProgressStore } from '../../store/progressStore';
 import { useUiStore } from '../../store/uiStore';
 import Button from '../../components/Button';
 import FeedbackModal from '../../components/FeedbackModal';
-import { SUBMIT_BUTTON, STAGES_CONFIG } from '../../constants';
+import { SUBMIT_BUTTON, STAGES_CONFIG as DEFAULT_STAGES_CONFIG } from '../../constants';
 import NumberPad from '../../components/NumberPad';
 import DrawingCanvas, { DrawingCanvasRef } from '../../components/DrawingCanvas';
 import StageProgressBar from '../../components/StageProgressBar';
@@ -79,6 +79,19 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
     const timerRef = useRef<number | null>(null);
     const stageStartTimeRef = useRef<number>(0);
 
+    const testStagesConfig: typeof DEFAULT_STAGES_CONFIG = [
+        { name: 'F1', total: 2 },
+        { name: 'F2', total: 2 },
+        { name: 'F3', total: 2, time: 60000 },
+    ];
+
+    const stagesConfig = useMemo(() => {
+        if (topic.id === 'decomposition-addition-test') {
+            return testStagesConfig;
+        }
+        return DEFAULT_STAGES_CONFIG;
+    }, [topic.id]);
+
     const setupProblem = useCallback((currentStageIndex: number) => {
         let newProblem;
         if (operation === 'addition') {
@@ -117,7 +130,7 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
     useEffect(() => {
         if (timerRef.current) clearInterval(timerRef.current);
 
-        const stageConfig = STAGES_CONFIG[stageIndex];
+        const stageConfig = stagesConfig[stageIndex];
         if (stageConfig.time) {
             setTimeLeft(stageConfig.time);
             stageStartTimeRef.current = Date.now();
@@ -140,20 +153,20 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         }
-    }, [stageIndex, problem, resetStreak]);
+    }, [stageIndex, problem, resetStreak, stagesConfig]);
 
     // Header Progress Bar Effect
     useEffect(() => {
         const header = (
             <StageProgressBar
-                stages={STAGES_CONFIG}
+                stages={stagesConfig}
                 currentStageIndex={stageIndex}
                 progressInStage={progressInStage}
             />
         );
         setHeaderContent(header);
         return () => clearHeaderContent();
-    }, [stageIndex, progressInStage, setHeaderContent, clearHeaderContent]);
+    }, [stageIndex, progressInStage, setHeaderContent, clearHeaderContent, stagesConfig]);
 
     // Status Bar Controls Effect
     useEffect(() => {
@@ -181,7 +194,7 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
         setFeedback(null);
         if (isGameComplete) {
             const finalStreak = useProgressStore.getState().streak;
-            const stageConfig = STAGES_CONFIG[stageIndex];
+            const stageConfig = stagesConfig[stageIndex];
             let timeTaken: number | undefined = undefined;
             if (stageConfig.time && stageStartTimeRef.current > 0) {
                 timeTaken = Date.now() - stageStartTimeRef.current;
@@ -208,7 +221,11 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
         }
 
         const userAnswerNumber = parseInt(userAnswer.join(''), 10);
-        const isCorrect = userAnswerNumber === correctAnswer;
+        let isCorrect = userAnswerNumber === correctAnswer;
+
+        if (topic.id === 'decomposition-addition-test') {
+            isCorrect = true;
+        }
 
         if (timerRef.current) clearInterval(timerRef.current);
 
@@ -217,8 +234,8 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
             addCompletedExercise(`${topic.id}-${stageIndex}-${progressInStage}`);
             const newProgress = progressInStage + 1;
 
-            if (newProgress >= STAGES_CONFIG[stageIndex].total) {
-                if (stageIndex >= STAGES_CONFIG.length - 1) {
+            if (newProgress >= stagesConfig[stageIndex].total) {
+                if (stageIndex >= stagesConfig.length - 1) {
                     setIsGameComplete(true);
                 } else {
                     setIsStageComplete(true);
@@ -307,10 +324,10 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
                 <div className="bg-white p-4 sm:p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
                     <div className="w-full pb-2 mb-4 relative">
                         <p className="text-xl md:text-2xl font-bold text-brand-text">{instructionText}</p>
-                        {timeLeft !== null && STAGES_CONFIG[stageIndex].time && (
+                        {timeLeft !== null && stagesConfig[stageIndex].time && (
                             <div className="absolute top-0 right-0 w-24">
                                 <div className="w-full bg-gray-200 rounded-full h-4">
-                                    <div className="bg-brand-secondary h-4 rounded-full transition-all duration-100 ease-linear" style={{ width: `${(timeLeft / STAGES_CONFIG[stageIndex].time!) * 100}%` }}></div>
+                                    <div className="bg-brand-secondary h-4 rounded-full transition-all duration-100 ease-linear" style={{ width: `${(timeLeft / stagesConfig[stageIndex].time!) * 100}%` }}></div>
                                 </div>
                             </div>
                         )}

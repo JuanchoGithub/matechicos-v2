@@ -114,6 +114,11 @@ const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({ childr
     const { x, y } = coords;
     contextRef.current.beginPath();
     contextRef.current.moveTo(x, y);
+    // This is the key change: draw a tiny line segment to render a dot
+    // due to lineCap being 'round'. This enables click-to-draw/erase.
+    contextRef.current.lineTo(x, y);
+    contextRef.current.stroke();
+
     setIsDrawing(true);
   };
 
@@ -151,7 +156,7 @@ const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({ childr
         onMouseMove={draw}
         onTouchStart={startDrawing}
         onTouchMove={draw}
-        className="absolute top-0 left-0 w-full h-full z-0 bg-transparent"
+        className={`absolute top-0 left-0 w-full h-full z-0 bg-transparent ${mode === 'erase' ? 'eraser-cursor' : ''}`}
       />
     </div>
   );
