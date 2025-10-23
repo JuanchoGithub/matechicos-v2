@@ -375,14 +375,14 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
         feedback === 'correct';
 
     return (
-        <div className="w-full flex-grow flex flex-col md:flex-row gap-8">
+        <div className="w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8">
             <main className="flex-grow flex flex-col relative">
                 <HelpButton operation="division" gameMode="division-decomposition" />
                 <div className="bg-white p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
                     
                     {/* Interactive prompt */}
-                    <div className="font-sans text-xl p-4 bg-gray-50 rounded-lg w-full max-w-3xl mx-auto">
-                        <div className="text-center text-lg font-semibold text-gray-700 mb-3 h-12 flex items-center justify-center">
+                    <div className="font-sans text-lg md:text-xl p-4 bg-gray-50 rounded-lg w-full max-w-3xl mx-auto">
+                        <div className="text-center text-base sm:text-lg md:text-xl lg:text-2xl font-semibold text-gray-700 mb-3 h-16 flex items-center justify-center">
                             {getPrompt()}
                         </div>
                         {step === 6 ? (
@@ -412,57 +412,59 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
                         <div className="hidden md:block w-48 flex-shrink-0">
                             {renderMultiplicationHint()}
                         </div>
-                        <div className="flex-grow flex flex-col items-center justify-center font-mono text-4xl">
-                           <div className="relative" style={{ width: '16rem', height: '28rem' }}>
-                                {/* Quotient */}
-                                <div className="absolute top-0 right-16 w-20 text-right">
-                                    <Digit highlight={highlights['q1']}>{step === 0 ? userInput : quotient1}</Digit>
-                                    <Digit highlight={highlights['q2']}><span className={step < 3 ? 'invisible' : ''}>{step === 3 ? userInput : quotient2}</span></Digit>
-                                </div>
+                        <div className="flex-grow flex flex-col items-center justify-center font-mono text-6xl sm:text-5xl">
+                           <div className="w-[12rem] h-[21rem] sm:w-[16rem] sm:h-[28rem]">
+                               <div className="relative origin-top-left scale-[0.75] sm:scale-100" style={{ width: '16rem', height: '28rem' }}>
+                                    {/* Quotient */}
+                                    <div className="absolute top-0 right-16 w-20 text-right">
+                                        <Digit highlight={highlights['q1']}>{step === 0 ? userInput : quotient1}</Digit>
+                                        <Digit highlight={highlights['q2']}><span className={step < 3 ? 'invisible' : ''}>{step === 3 ? userInput : quotient2}</span></Digit>
+                                    </div>
 
-                                 {/* Divisor */}
-                                 <div className="absolute top-14 right-40">
-                                    <Digit highlight={highlights['divisor']}>{divisor}</Digit>
-                                </div>
-                                
-                                {/* Division Symbol */}
-                                <div className="absolute top-14 right-36 h-10 border-l-4 border-black"></div>
-                                <div className="absolute top-12 right-16 w-20 border-b-4 border-black"></div>
+                                     {/* Divisor */}
+                                     <div className="absolute top-14 right-40">
+                                        <Digit highlight={highlights['divisor']}>{divisor}</Digit>
+                                    </div>
+                                    
+                                    {/* Division Symbol */}
+                                    <div className="absolute top-14 right-36 h-10 border-l-4 border-black"></div>
+                                    <div className="absolute top-12 right-16 w-20 border-b-4 border-black"></div>
 
-                                {/* Dividend */}
-                                <div className="absolute top-14 right-16 w-20 text-right">
-                                    <Digit highlight={highlights['d1']}>{dividendStr[0]}</Digit>
-                                    <Digit>{dividendStr[1]}</Digit>
-                                </div>
-                                
-                                {/* Calculation Steps */}
-                                <div className={`absolute top-32 right-28 w-10 text-right transition-opacity ${step >= 1 ? 'opacity-100' : 'opacity-0'}`}>
-                                    <span className="text-gray-400 absolute left-[-1rem]">-</span>
-                                    <span className={`inline-block px-1 rounded ${highlights['p1'] || ''}`}>{step === 1 ? userInput : product1}</span>
-                                </div>
+                                    {/* Dividend */}
+                                    <div className="absolute top-14 right-16 w-20 text-right">
+                                        <Digit highlight={highlights['d1']}>{dividendStr[0]}</Digit>
+                                        <Digit>{dividendStr[1]}</Digit>
+                                    </div>
+                                    
+                                    {/* Calculation Steps */}
+                                    <div className={`absolute top-32 right-28 w-10 text-right transition-opacity ${step >= 1 ? 'opacity-100' : 'opacity-0'}`}>
+                                        <span className="text-gray-400 absolute left-[-1rem]">-</span>
+                                        <span className={`inline-block px-1 rounded ${highlights['p1'] || ''}`}>{step === 1 ? userInput : product1}</span>
+                                    </div>
 
-                                <div className={`absolute top-44 right-28 w-10 border-b-4 border-black transition-opacity ${step >= 2 ? 'opacity-100' : 'opacity-0'}`}></div>
-                                
-                                <div className={`absolute top-[12.5rem] right-16 w-20 text-right transition-opacity ${step >= 2 ? 'opacity-100' : 'opacity-0'}`}>
-                                    <Digit highlight={highlights['r1']}>{step === 2 ? userInput : remainder1}</Digit>
-                                    <Digit highlight={highlights['d2-brought-down']}><span className={step < 3 ? 'invisible' : ''}>{dividendStr[1]}</span></Digit>
-                                </div>
-                                
-                                <div className={`absolute top-[11rem] right-20 text-brand-secondary transition-opacity ${step === 2 && remainder1 !== null ? 'opacity-100' : 'opacity-0'}`}>↓</div>
-                                
-                                <div className={`absolute top-[16rem] right-16 w-20 text-right transition-opacity ${step >= 4 ? 'opacity-100' : 'opacity-0'}`}>
-                                    <span className="text-gray-400 absolute left-[-1rem]">-</span>
-                                    <span className={`inline-block px-1 rounded ${highlights['p2'] || ''}`}>{step === 4 ? userInput : product2}</span>
-                                </div>
+                                    <div className={`absolute top-44 right-28 w-10 border-b-4 border-black transition-opacity ${step >= 2 ? 'opacity-100' : 'opacity-0'}`}></div>
+                                    
+                                    <div className={`absolute top-[12.5rem] right-16 w-20 text-right transition-opacity ${step >= 2 ? 'opacity-100' : 'opacity-0'}`}>
+                                        <Digit highlight={highlights['r1']}>{step === 2 ? userInput : remainder1}</Digit>
+                                        <Digit highlight={highlights['d2-brought-down']}><span className={step < 3 ? 'invisible' : ''}>{dividendStr[1]}</span></Digit>
+                                    </div>
+                                    
+                                    <div className={`absolute top-[11rem] right-20 text-brand-secondary transition-opacity ${step === 2 && remainder1 !== null ? 'opacity-100' : 'opacity-0'}`}>↓</div>
+                                    
+                                    <div className={`absolute top-[16rem] right-16 w-20 text-right transition-opacity ${step >= 4 ? 'opacity-100' : 'opacity-0'}`}>
+                                        <span className="text-gray-400 absolute left-[-1rem]">-</span>
+                                        <span className={`inline-block px-1 rounded ${highlights['p2'] || ''}`}>{step === 4 ? userInput : product2}</span>
+                                    </div>
 
-                                <div className={`absolute top-[18.5rem] right-16 w-20 border-b-4 border-black transition-opacity ${step >= 5 ? 'opacity-100' : 'opacity-0'}`}></div>
+                                    <div className={`absolute top-[18.5rem] right-16 w-20 border-b-4 border-black transition-opacity ${step >= 5 ? 'opacity-100' : 'opacity-0'}`}></div>
 
-                                <div className={`absolute top-[19.5rem] right-16 w-20 text-right transition-opacity ${step >= 5 ? 'opacity-100' : 'opacity-0'}`}>
-                                    <span className="inline-block px-1 rounded">
-                                        {step === 5 ? userInput : finalRemainder}
-                                    </span>
+                                    <div className={`absolute top-[19.5rem] right-16 w-20 text-right transition-opacity ${step >= 5 ? 'opacity-100' : 'opacity-0'}`}>
+                                        <span className="inline-block px-1 rounded">
+                                            {step === 5 ? userInput : finalRemainder}
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
+                           </div>
                         </div>
                         <div className="w-full md:hidden mt-4">
                             {renderMultiplicationHint()}

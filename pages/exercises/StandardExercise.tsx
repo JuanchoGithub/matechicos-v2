@@ -292,11 +292,11 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
 
         return (
             <div className="bg-white p-4 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
-                <p className="text-xl md:text-2xl font-bold text-brand-text mb-2">{epicEx.problemText}</p>
+                <p className="text-2xl md:text-3xl font-bold text-brand-text mb-2">{epicEx.problemText}</p>
                 <div className="bg-gray-100 rounded-xl p-2 my-2">
-                    <p className="text-3xl font-extrabold tracking-wider">{equation} = ?</p>
+                    <p className="text-3xl md:text-4xl font-extrabold tracking-wider">{equation} = ?</p>
                 </div>
-                <div className="flex-grow flex flex-col items-center justify-center relative w-full h-full min-h-[200px] mt-2 border-4 border-gray-200 rounded-xl">
+                <div className="flex-grow flex flex-col items-center justify-center relative w-full h-full min-h-[150px] sm:min-h-[200px] mt-2 border-4 border-gray-200 rounded-xl">
                     <span className="absolute top-1 left-2 text-gray-400 font-sans text-sm">Tu Pizarra</span>
                     <DrawingCanvas ref={drawingCanvasRef} mode={drawingMode}>
                         <div className="w-full h-full flex flex-col items-center justify-center p-4">
@@ -321,7 +321,7 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
 
             const parts = wpExercise.problemText.split(/(\d+)/g).filter(Boolean);
             return (
-                <p className="text-2xl font-bold text-brand-text leading-relaxed">
+                <p className="text-2xl md:text-3xl font-bold text-brand-text leading-relaxed">
                     {parts.map((part, index) => {
                         if (/\d+/.test(part)) {
                             const num = parseInt(part, 10);
@@ -338,7 +338,7 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
                 </p>
             );
         }
-        return <p className="text-2xl font-bold text-brand-text">{currentExercise?.question}</p>;
+        return <p className="text-3xl md:text-4xl font-bold text-brand-text">{currentExercise?.question}</p>;
     };
 
     const renderSidebarContent = () => {
@@ -402,7 +402,7 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
     const showSubmitButton = currentExercise.type !== ExerciseType.WordProblem || wordProblemState.step === 'solve';
 
     return (
-        <div className="w-full flex-grow flex flex-col md:flex-row gap-8">
+        <div className="w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8">
             <main className="flex-grow flex flex-col relative">
                 {operation && !isEpicProblem && <HelpButton operation={operation} gameMode={isProgressiveWordProblem ? 'word-problem' : undefined} />}
                 {isEpicProblem 

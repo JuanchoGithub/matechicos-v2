@@ -293,7 +293,7 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
         const digitBoxClasses = "w-[1.5em] h-[1.5em] flex items-center justify-center font-bold";
 
         return (
-            <div className="w-full max-w-xs sm:max-w-sm md:max-w-md mx-auto font-mono text-[6vmin] sm:text-[5vmin] md:text-5xl lg:text-6xl">
+            <div className="w-full max-w-xs sm:max-w-sm md:max-w-md mx-auto font-mono text-4xl sm:text-5xl md:text-5xl lg:text-6xl">
                 <div className="flex justify-end">{num1Digits.map((d, i) => <div key={`num1-${i}`} className={`${digitBoxClasses} ${d === ' ' ? 'text-transparent' : ''}`}>{d}</div>)}</div>
                 <div className="flex justify-end items-center">
                     <div className={digitBoxClasses}>{operator}</div>
@@ -318,7 +318,7 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
     const instructionText = `Resolvé la siguiente ${instructionTextMap[operation]}:`;
 
     return (
-        <div className="w-full flex-grow flex flex-col md:flex-row gap-8">
+        <div className="w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8">
             <main className="flex-grow flex flex-col relative">
                 <HelpButton operation={operation} gameMode="staged" />
                 <div className="bg-white p-4 sm:p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">

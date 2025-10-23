@@ -219,10 +219,10 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
 
         const num1Digits = num1Str.padStart(numCols, ' ').split('');
         const num2Digits = num2Str.padStart(numCols, ' ').split('');
-        const digitBoxClasses = "w-[1.5em] h-[1.5em] flex items-center justify-center font-bold text-3xl";
+        const digitBoxClasses = "w-[1.5em] h-[1.5em] flex items-center justify-center font-bold text-2xl sm:text-3xl";
 
         return (
-            <div className="w-full max-w-xs mx-auto font-mono text-3xl">
+            <div className="w-full max-w-xs mx-auto font-mono">
                 <div className="flex justify-end">{num1Digits.map((d, i) => <div key={`sum1-${i}`} className={`${digitBoxClasses} ${d === ' ' ? 'text-transparent' : 'text-brand-primary'}`}>{d}</div>)}</div>
                 <div className="flex justify-end items-center">
                     <div className={digitBoxClasses}>+</div>
@@ -247,13 +247,13 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
     };
 
     return (
-        <div className="w-full flex-grow flex flex-col md:flex-row gap-8">
+        <div className="w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8">
             <main className="flex-grow flex flex-col relative">
                 <HelpButton operation="multiplication" gameMode="multiplication-decomposition" />
                 <div className="bg-white p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
-                    <div className="flex-grow flex flex-col items-center justify-center font-mono text-2xl sm:text-3xl md:text-4xl space-y-8">
+                    <div className="flex-grow flex flex-col items-center justify-center font-mono text-xl sm:text-2xl md:text-3xl lg:text-4xl space-y-4 md:space-y-6">
                         {/* Problem statement */}
-                        <div className="font-bold text-5xl tracking-wider">
+                        <div className="font-bold text-4xl sm:text-4xl md:text-5xl tracking-wider">
                             <span>{num1}</span>
                             <span className="mx-4 text-gray-400">×</span>
                             <span>{num2}</span>
@@ -277,7 +277,7 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
 
 
                         {/* Step-by-step problem */}
-                        <div className="space-y-4 w-full max-w-sm mx-auto font-sans text-2xl">
+                        <div className="space-y-4 w-full max-w-sm mx-auto font-sans text-lg sm:text-xl md:text-2xl">
                             {/* Units Step */}
                             <div className="flex items-center justify-between transition-opacity duration-500" style={{ opacity: currentStep >= 0 ? 1 : 0.3 }}>
                                 <span className="text-brand-secondary">{num1Units} × {num2} =</span>

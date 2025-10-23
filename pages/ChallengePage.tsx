@@ -385,7 +385,7 @@ const ChallengePage: React.FC = () => {
 
 
     return (
-        <div className="w-full flex-grow flex flex-col md:flex-row gap-8">
+        <div className="w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8">
             <main className="flex-grow flex flex-col relative">
                 <HelpButton operation={operation} gameMode="challenge" />
                 <div className={`bg-white p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col relative transition-all duration-300 ${showTrollEffect ? 'scale-105 shadow-yellow-300/50' : ''} flex-grow`}>
@@ -421,7 +421,7 @@ const ChallengePage: React.FC = () => {
                     <div className="flex-grow flex items-center justify-center">
                         <div className="my-6 min-h-[100px] relative flex items-center justify-center">
                              {showTrollEffect && <div className="absolute text-6xl font-black text-yellow-400 opacity-0 animate-[zoom-out-fade_0.6s_ease-out_forwards]">¡TROLL!</div>}
-                            <span className="text-7xl font-extrabold tracking-wider">{problem.a} {operator} {problem.b}</span>
+                            <span className="text-6xl sm:text-7xl font-extrabold tracking-wider">{problem.a} {operator} {problem.b}</span>
                         </div>
                     </div>
                 </div>
@@ -433,7 +433,7 @@ const ChallengePage: React.FC = () => {
                         type="text"
                         readOnly
                         value={userAnswer}
-                        className="text-5xl text-center font-bold w-full mb-4 p-4 bg-gray-100 border-2 border-gray-200 rounded-2xl"
+                        className="text-4xl sm:text-5xl text-center font-bold w-full mb-4 p-4 bg-gray-100 border-2 border-gray-200 rounded-2xl"
                         placeholder="?"
                     />
                     <NumberPad 
