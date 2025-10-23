@@ -5,6 +5,7 @@ import { ExerciseMode } from '../types';
 
 import StagedDecompositionGame from './exercises/StagedDecompositionGame';
 import MultiplicationDecompositionGame from './exercises/MultiplicationDecompositionGame';
+import DivisionDecompositionGame from './exercises/DivisionDecompositionGame';
 import StandardExercise from './exercises/StandardExercise';
 
 const ExercisePage: React.FC = () => {
@@ -28,6 +29,9 @@ const ExercisePage: React.FC = () => {
         case ExerciseMode.PedagogicalDecompositionMultiplication:
             return <MultiplicationDecompositionGame topic={topic} gradeId={gradeId} />;
         
+        case ExerciseMode.PedagogicalDecompositionDivision:
+            return <DivisionDecompositionGame topic={topic} gradeId={gradeId} />;
+
         case ExerciseMode.StagedDecompositionSubtraction:
             return <StagedDecompositionGame topic={topic} gradeId={gradeId} operation="subtraction" />;
         

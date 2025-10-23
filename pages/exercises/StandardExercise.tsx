@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Exercise, ExerciseType, MultipleChoiceExercise, NumberInputExercise, Topic } from '../../types';
+import { Exercise, ExerciseType, MultipleChoiceExercise, NumberInputExercise, Topic, WordProblemExercise, EpicWordProblemExercise } from '../../types';
 import { useProgressStore } from '../../store/progressStore';
 import { useUiStore } from '../../store/uiStore';
 import Button from '../../components/Button';
@@ -8,25 +8,61 @@ import FeedbackModal from '../../components/FeedbackModal';
 import { SUBMIT_BUTTON } from '../../constants';
 import NumberPad from '../../components/NumberPad';
 import HelpButton from '../../components/HelpButton';
+import ProgressionMeter from '../../components/ProgressionMeter';
+import DrawingCanvas, { DrawingCanvasRef } from '../../components/DrawingCanvas';
+import { EraserIcon, PencilIcon, ResetIcon } from '../../components/icons';
+
+type Operation = 'addition' | 'subtraction' | 'multiplication' | 'division';
 
 interface StandardExerciseProps {
     topic: Topic;
     gradeId: string;
 }
 
+const STAGE_THRESHOLD = 10;
+
 const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) => {
     const navigate = useNavigate();
-    const { completedExercises, addCompletedExercise, incrementStreak, resetStreak, recordCompletion } = useProgressStore();
-    const { setHeaderContent, clearHeaderContent } = useUiStore();
+    const { 
+        completedExercises, 
+        addCompletedExercise, 
+        incrementStreak, 
+        resetStreak, 
+        recordCompletion,
+        getTopicProgress,
+        recordCorrectAnswerForTopic
+    } = useProgressStore();
+    const { setHeaderContent, clearHeaderContent, setStatusBarContent, clearStatusBarContent } = useUiStore();
 
     const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
     const [userAnswer, setUserAnswer] = useState<string>('');
     const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
+    const [explanation, setExplanation] = useState<React.ReactNode | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const practicePool = useMemo(() =>
-        topic.exercises.filter(ex => !completedExercises[ex.id]) || [],
-        [topic, completedExercises]
-    );
+    const isProgressiveWordProblem = topic.id === 'word-problems-add-subtract';
+    const isEpicProblem = currentExercise?.type === ExerciseType.EpicWordProblem;
+    const topicProgress = getTopicProgress(topic.id);
+    const drawingCanvasRef = useRef<DrawingCanvasRef>(null);
+    const [drawingMode, setDrawingMode] = useState<'draw' | 'erase'>('draw');
+
+    const [wordProblemState, setWordProblemState] = useState<{
+        step: 'numbers' | 'operation' | 'solve';
+        selectedNumbers: number[];
+        selectedOperation: Operation | null;
+    }>({
+        step: 'numbers',
+        selectedNumbers: [],
+        selectedOperation: null,
+    });
+    
+    const practicePool = useMemo(() => {
+        let pool = topic.exercises.filter(ex => !completedExercises[ex.id]);
+        if (isProgressiveWordProblem) {
+            pool = pool.filter(ex => (ex as WordProblemExercise).difficultyStage <= topicProgress.stage);
+        }
+        return pool || [];
+    }, [topic, completedExercises, isProgressiveWordProblem, topicProgress.stage]);
 
     const operation = useMemo(() => {
         if (topic.id.includes('addition') || topic.id.includes('sumas')) return 'addition';
@@ -34,7 +70,7 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
         if (topic.id.includes('multiplication') || topic.id.includes('multiplicacion')) return 'multiplication';
         return null;
     }, [topic.id]);
-
+    
     const pickNextExercise = useCallback(() => {
         if (practicePool.length === 0) {
             if (topic.exercises.length > 0) {
@@ -45,38 +81,95 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
             }
             return;
         }
-        const randomIndex = Math.floor(Math.random() * practicePool.length);
-        setCurrentExercise(practicePool[randomIndex]);
+        let exercisePool = practicePool;
+        if(isProgressiveWordProblem) {
+            // Prioritize exercises from the current stage
+            const currentStagePool = practicePool.filter(ex => (ex as WordProblemExercise).difficultyStage === topicProgress.stage);
+            if (currentStagePool.length > 0) {
+                exercisePool = currentStagePool;
+            }
+        }
+
+        const randomIndex = Math.floor(Math.random() * exercisePool.length);
+        setCurrentExercise(exercisePool[randomIndex]);
         setUserAnswer('');
         setFeedback(null);
-    }, [practicePool, gradeId, navigate, topic, recordCompletion]);
+        setExplanation(null);
+        drawingCanvasRef.current?.clearCanvas();
+        setIsLoading(false);
+    }, [practicePool, gradeId, navigate, topic, recordCompletion, isProgressiveWordProblem, topicProgress.stage]);
+    
+    const handleIncorrectFeedbackClose = useCallback(() => {
+        setFeedback(null);
+        setExplanation(null);
+        pickNextExercise();
+    }, [pickNextExercise]);
 
     useEffect(() => {
+        setIsLoading(true);
         pickNextExercise();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [topic.id, completedExercises]);
+    }, [topic.id, topicProgress.stage]); // Rerun when stage changes
+
+    useEffect(() => {
+        if (currentExercise?.type === ExerciseType.WordProblem) {
+            setWordProblemState({
+                step: 'numbers',
+                selectedNumbers: [],
+                selectedOperation: null,
+            });
+            setUserAnswer('');
+        }
+    }, [currentExercise]);
 
     useEffect(() => {
         if (currentExercise) {
             const titleContent = (
                 <div className="flex items-center gap-4">
                     <h1 className="text-xl md:text-2xl font-bold text-white tracking-wider">{topic.name}</h1>
-                    <div className="text-lg md:text-xl text-yellow-300">
-                        {'⭐'.repeat(currentExercise.difficulty)}
-                    </div>
+                    {!isEpicProblem && (isProgressiveWordProblem || currentExercise.type !== ExerciseType.WordProblem) && (
+                        <div className="text-lg md:text-xl text-yellow-300">
+                            {'⭐'.repeat(currentExercise.difficulty)}
+                        </div>
+                    )}
                 </div>
             );
             setHeaderContent(titleContent);
         }
         return () => clearHeaderContent();
-    }, [topic, currentExercise, setHeaderContent, clearHeaderContent]);
+    }, [topic, currentExercise, setHeaderContent, clearHeaderContent, isProgressiveWordProblem, isEpicProblem]);
+
+    useEffect(() => {
+        if (isEpicProblem) {
+            const controls = (
+                <div className="flex justify-center items-center gap-2 sm:gap-4">
+                    <Button onClick={() => setDrawingMode('draw')} variant={drawingMode === 'draw' ? 'secondary' : 'ghost'} className="py-2 px-3 sm:px-4 text-sm sm:text-base flex items-center">
+                        <PencilIcon className="w-5 h-5 sm:mr-2" /> <span className="hidden sm:inline">Dibujar</span>
+                    </Button>
+                    <Button onClick={() => setDrawingMode('erase')} variant={drawingMode === 'erase' ? 'secondary' : 'ghost'} className="py-2 px-3 sm:px-4 text-sm sm:text-base flex items-center">
+                        <EraserIcon className="w-5 h-5 sm:mr-2" /> <span className="hidden sm:inline">Borrar</span>
+                    </Button>
+                    <Button onClick={() => drawingCanvasRef.current?.clearCanvas()} variant="ghost" className="py-2 px-3 sm:px-4 text-sm sm:text-base flex items-center">
+                        <ResetIcon className="w-5 h-5 sm:mr-2" /> <span className="hidden sm:inline">Reiniciar</span>
+                    </Button>
+                </div>
+            );
+            setStatusBarContent(controls);
+            return () => clearStatusBarContent();
+        }
+    }, [isEpicProblem, drawingMode, setStatusBarContent, clearStatusBarContent]);
 
     const handleAnswerSubmit = () => {
         if (!currentExercise) return;
         let isCorrect = false;
 
-        if (currentExercise.type === ExerciseType.NumberInput) {
-            isCorrect = parseInt(userAnswer, 10) === (currentExercise as NumberInputExercise).answer;
+        if (currentExercise.type === ExerciseType.WordProblem) {
+            const wpExercise = currentExercise as WordProblemExercise;
+            const isNumbersCorrect = [...wordProblemState.selectedNumbers].sort((a, b) => a - b).toString() === [...wpExercise.numbers].sort((a, b) => a - b).toString();
+            const isOperationCorrect = wordProblemState.selectedOperation === wpExercise.operation;
+            const isAnswerCorrect = parseInt(userAnswer, 10) === wpExercise.answer;
+            isCorrect = isNumbersCorrect && isOperationCorrect && isAnswerCorrect;
+        } else if (currentExercise.type === ExerciseType.EpicWordProblem || currentExercise.type === ExerciseType.NumberInput) {
+            isCorrect = parseInt(userAnswer, 10) === currentExercise.answer;
         } else if (currentExercise.type === ExerciseType.MultipleChoice) {
             isCorrect = userAnswer === (currentExercise as MultipleChoiceExercise).answer;
         }
@@ -85,82 +178,177 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
             setFeedback('correct');
             addCompletedExercise(currentExercise.id);
             incrementStreak();
+            if (isProgressiveWordProblem) {
+                recordCorrectAnswerForTopic(topic.id, STAGE_THRESHOLD);
+            }
         } else {
             setFeedback('incorrect');
             resetStreak();
-            setTimeout(() => setFeedback(null), 1500);
+            
+            let explainer: React.ReactNode = null;
+            if (currentExercise.type === ExerciseType.NumberInput) {
+                explainer = <p>La respuesta correcta era <strong>{currentExercise.answer}</strong>.</p>;
+            } else if (currentExercise.type === ExerciseType.MultipleChoice) {
+                explainer = <p>La respuesta correcta era <strong>"{currentExercise.answer}"</strong>.</p>;
+            } else if (currentExercise.type === ExerciseType.WordProblem || currentExercise.type === ExerciseType.EpicWordProblem) {
+                const wp = currentExercise;
+                explainer = (
+                    <div className="space-y-2">
+                        <p>¡No te preocupes! Analicemos el problema:</p>
+                        <p className="bg-white/10 p-2 rounded italic">"{wp.problemText}"</p>
+                        <p>{wp.explanation}</p>
+                    </div>
+                );
+            }
+            setExplanation(explainer);
         }
     };
 
-    if (!currentExercise) {
+    const toggleNumberSelection = (num: number) => {
+        setWordProblemState(prev => {
+            const newSelected = prev.selectedNumbers.includes(num) ? prev.selectedNumbers.filter(n => n !== num) : [...prev.selectedNumbers, num];
+            return { ...prev, selectedNumbers: newSelected };
+        });
+    };
+    
+    const renderEpicProblemMain = () => {
+        const epicEx = currentExercise as EpicWordProblemExercise;
+        let equation = epicEx.numbers[0].toString();
+        const symbols = { addition: '+', subtraction: '-' };
+        epicEx.operations.forEach((op, index) => {
+            equation += ` ${symbols[op]} ${epicEx.numbers[index + 1]}`;
+        });
+
         return (
-            <div className="text-center p-10 bg-white rounded-2xl shadow-lg">
-                <h2 className="text-2xl font-bold">Cargando ejercicio...</h2>
+            <div className="bg-white p-4 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
+                <p className="text-xl md:text-2xl font-bold text-brand-text mb-2">{epicEx.problemText}</p>
+                <div className="bg-gray-100 rounded-xl p-2 my-2">
+                    <p className="text-3xl font-extrabold tracking-wider">{equation} = ?</p>
+                </div>
+                <div className="flex-grow flex flex-col items-center justify-center relative w-full h-full min-h-[200px] mt-2 border-4 border-gray-200 rounded-xl">
+                    <span className="absolute top-1 left-2 text-gray-400 font-sans text-sm">Tu Pizarra</span>
+                    <DrawingCanvas ref={drawingCanvasRef} mode={drawingMode}>
+                        <div className="w-full h-full flex flex-col items-center justify-center p-4">
+                        </div>
+                    </DrawingCanvas>
+                </div>
             </div>
-        );
+        )
     }
 
+    const renderMainContent = () => {
+        if (currentExercise?.type === ExerciseType.WordProblem) {
+            const wpExercise = currentExercise as WordProblemExercise;
+            
+            if (wordProblemState.step === 'solve') {
+                const [numA, numB] = [...wordProblemState.selectedNumbers].sort((a, b) => b - a);
+                const operationSymbols = { addition: '+', subtraction: '-', multiplication: '×', division: '÷' };
+                const symbol = operationSymbols[wordProblemState.selectedOperation!];
+                return ( <div className="text-6xl font-extrabold tracking-wider">{`${numA} ${symbol} ${numB} = ?`}</div> );
+            }
+
+            const parts = wpExercise.problemText.split(/(\d+)/g).filter(Boolean);
+            return (
+                <p className="text-2xl font-bold text-brand-text leading-relaxed">
+                    {parts.map((part, index) => {
+                        if (/\d+/.test(part)) {
+                            const num = parseInt(part, 10);
+                            const isSelected = wordProblemState.selectedNumbers.includes(num);
+                            return (
+                                <span key={index} onClick={() => wordProblemState.step === 'numbers' && toggleNumberSelection(num)}
+                                    className={`p-1 rounded-lg transition-all duration-300 ${wordProblemState.step === 'numbers' ? 'cursor-pointer hover:bg-yellow-200' : ''} ${isSelected ? 'bg-brand-secondary text-white ring-2 ring-yellow-400' : 'bg-gray-100'}`}>
+                                    {part}
+                                </span>
+                            );
+                        }
+                        return <span key={index}>{part}</span>;
+                    })}
+                </p>
+            );
+        }
+        return <p className="text-2xl font-bold text-brand-text">{currentExercise?.question}</p>;
+    };
+
     const renderSidebarContent = () => {
-        switch (currentExercise.type) {
+        if (currentExercise?.type === ExerciseType.WordProblem) {
+            const wpExercise = currentExercise as WordProblemExercise;
+            switch (wordProblemState.step) {
+                case 'numbers': return (
+                    <div className="flex flex-col h-full"><h3 className="text-xl font-bold mb-2 text-center">1. Elegí los números</h3>
+                        <div className="flex-grow bg-gray-100 rounded-lg p-4 mb-4 text-center">
+                            <p className="text-gray-600 mb-2">Números elegidos:</p>
+                            <div className="text-3xl font-bold h-12">{wordProblemState.selectedNumbers.join(', ')}</div>
+                        </div>
+                        <Button onClick={() => setWordProblemState(prev => ({ ...prev, step: 'operation' }))} disabled={wordProblemState.selectedNumbers.length !== wpExercise.numbers.length}>Siguiente</Button>
+                    </div>);
+                case 'operation':
+                    const operations: { op: Operation, symbol: string }[] = [{ op: 'addition', symbol: '+' }, { op: 'subtraction', symbol: '-' }];
+                    return (<div className="flex flex-col h-full"><h3 className="text-xl font-bold mb-4 text-center">2. ¿Qué operación es?</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            {operations.map(({ op, symbol }) => (<button key={op} onClick={() => setWordProblemState(prev => ({ ...prev, selectedOperation: op, step: 'solve' }))} className="text-5xl font-bold p-4 rounded-xl bg-brand-primary/10 hover:bg-brand-secondary/50 text-brand-primary transition-colors aspect-square focus:outline-none focus:ring-4 focus:ring-brand-secondary">{symbol}</button>))}
+                        </div></div>);
+                case 'solve': return (
+                    <div><h3 className="text-xl font-bold mb-4 text-center">3. Resolvé la cuenta</h3>
+                        <input type="text" readOnly value={userAnswer} className="text-4xl text-center font-bold w-full mb-4 p-4 bg-gray-100 border-2 border-gray-200 rounded-2xl focus:outline-none" placeholder="#" />
+                        <NumberPad onNumberClick={(num) => setUserAnswer(prev => (prev.length < 5 ? prev + num : prev))} onDeleteClick={() => setUserAnswer(prev => prev.slice(0, -1))} />
+                    </div>);
+            }
+        }
+
+        if (isEpicProblem) {
+             return (
+                <div>
+                    <h3 className="text-xl font-bold mb-4 text-center">Escribí el resultado final</h3>
+                    <input type="text" readOnly value={userAnswer} className="text-4xl text-center font-bold w-full mb-4 p-4 bg-gray-100 border-2 border-gray-200 rounded-2xl focus:outline-none" placeholder="#" />
+                    <NumberPad onNumberClick={(num) => setUserAnswer(prev => (prev.length < 5 ? prev + num : prev))} onDeleteClick={() => setUserAnswer(prev => prev.slice(0, -1))} />
+                </div>
+            );
+        }
+
+        switch (currentExercise?.type) {
             case ExerciseType.MultipleChoice:
                 const mcq = currentExercise as MultipleChoiceExercise;
-                return (
-                    <div className="flex flex-col space-y-3">
-                        {mcq.options.map(option => (
-                            <Button
-                                key={option}
-                                variant="secondary"
-                                onClick={() => setUserAnswer(option)}
-                                className={`w-full justify-center text-left p-4 h-auto text-xl ${userAnswer === option ? 'ring-4 ring-yellow-400' : ''}`}
-                            >
-                                {option}
-                            </Button>
-                        ))}
-                    </div>
-                );
+                return (<div className="flex flex-col space-y-3">
+                        {mcq.options.map(option => (<Button key={option} variant="secondary" onClick={() => setUserAnswer(option)} className={`w-full justify-center text-left p-4 h-auto text-xl ${userAnswer === option ? 'ring-4 ring-yellow-400' : ''}`}>{option}</Button>))}
+                    </div>);
             case ExerciseType.NumberInput:
                 return (
                     <div>
-                        <input
-                            type="text"
-                            readOnly
-                            value={userAnswer}
-                            className="text-4xl text-center font-bold w-full mb-4 p-4 bg-gray-100 border-2 border-gray-200 rounded-2xl focus:outline-none"
-                            placeholder="#"
-                        />
-                        <NumberPad
-                            onNumberClick={(num) => setUserAnswer(prev => (prev.length < 5 ? prev + num : prev))}
-                            onDeleteClick={() => setUserAnswer(prev => prev.slice(0, -1))}
-                        />
-                    </div>
-                );
-            default:
-                return null;
+                        <input type="text" readOnly value={userAnswer} className="text-4xl text-center font-bold w-full mb-4 p-4 bg-gray-100 border-2 border-gray-200 rounded-2xl focus:outline-none" placeholder="#" />
+                        <NumberPad onNumberClick={(num) => setUserAnswer(prev => (prev.length < 5 ? prev + num : prev))} onDeleteClick={() => setUserAnswer(prev => prev.slice(0, -1))} />
+                    </div>);
+            default: return null;
         }
     }
+    
+    if (isLoading || !currentExercise) {
+        return (<div className="text-center p-10 bg-white rounded-2xl shadow-lg flex-grow flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4"><div className="animate-spin rounded-full h-16 w-16 border-b-4 border-brand-primary"></div><h2 className="text-2xl font-bold">Cargando ejercicio...</h2></div>
+        </div>);
+    }
+    
+    const showSubmitButton = currentExercise.type !== ExerciseType.WordProblem || wordProblemState.step === 'solve';
 
     return (
-        <div className="w-full flex-grow flex flex-col md:flex-row gap-8">
-            <main className="flex-grow flex flex-col relative">
-                {operation && <HelpButton operation={operation} />}
-                <div className="bg-white p-8 rounded-3xl shadow-2xl text-center flex flex-col items-center justify-center flex-grow">
-                    <p className="text-2xl font-bold text-brand-text">{currentExercise.question}</p>
-                </div>
-            </main>
-
-            <aside className="w-full md:max-w-sm flex-shrink-0">
-                <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col h-full">
-                    <div className="flex-grow flex flex-col justify-center">
-                        {renderSidebarContent()}
+        <div className="w-full flex-grow flex flex-col gap-4">
+            {isProgressiveWordProblem && <ProgressionMeter stage={topicProgress.stage} progress={topicProgress.correctInStage} threshold={STAGE_THRESHOLD} />}
+            <div className="w-full flex-grow flex flex-col md:flex-row gap-8">
+                <main className="flex-grow flex flex-col relative">
+                    {operation && !isEpicProblem && <HelpButton operation={operation} />}
+                    {isEpicProblem 
+                        ? renderEpicProblemMain()
+                        : <div className="bg-white p-8 rounded-3xl shadow-2xl text-center flex flex-col items-center justify-center flex-grow">{renderMainContent()}</div>
+                    }
+                </main>
+                <aside className="w-full md:max-w-sm flex-shrink-0">
+                    <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col h-full">
+                        <div className="flex-grow flex flex-col justify-center">{renderSidebarContent()}</div>
+                        {showSubmitButton && <Button onClick={handleAnswerSubmit} disabled={!userAnswer} className="w-full mt-4">{SUBMIT_BUTTON}</Button>}
                     </div>
-                    <Button onClick={handleAnswerSubmit} disabled={!userAnswer} className="w-full mt-4">
-                        {SUBMIT_BUTTON}
-                    </Button>
-                </div>
-            </aside>
-
-            {feedback === 'correct' && <FeedbackModal isCorrect={true} onNext={pickNextExercise} />}
-            {feedback === 'incorrect' && <FeedbackModal isCorrect={false} onNext={() => { }} />}
+                </aside>
+                {feedback === 'correct' && <FeedbackModal isCorrect={true} onNext={pickNextExercise} />}
+                {feedback === 'incorrect' && <FeedbackModal isCorrect={false} onNext={handleIncorrectFeedbackClose} explanation={explanation} />}
+            </div>
         </div>
     );
 };

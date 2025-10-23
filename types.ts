@@ -2,6 +2,8 @@ export enum ExerciseType {
   MultipleChoice = 'multipleChoice',
   NumberInput = 'numberInput',
   DecompositionSubtraction = 'decompositionSubtraction',
+  WordProblem = 'wordProblem',
+  EpicWordProblem = 'epicWordProblem',
 }
 
 export enum ExerciseMode {
@@ -10,6 +12,7 @@ export enum ExerciseMode {
   StagedDecompositionAddition = 'stagedDecompositionAddition',
   StagedDecompositionMultiplication = 'stagedDecompositionMultiplication', // Retained for addition/subtraction structure
   PedagogicalDecompositionMultiplication = 'pedagogicalDecompositionMultiplication', // New step-by-step mode
+  PedagogicalDecompositionDivision = 'pedagogicalDecompositionDivision',
 }
 
 export interface BaseExercise {
@@ -36,7 +39,27 @@ export interface DecompositionSubtractionExercise extends BaseExercise {
   subtrahend: number;
 }
 
-export type Exercise = MultipleChoiceExercise | NumberInputExercise | DecompositionSubtractionExercise;
+export interface WordProblemExercise extends BaseExercise {
+  type: ExerciseType.WordProblem;
+  problemText: string;
+  numbers: number[];
+  operation: 'addition' | 'subtraction' | 'multiplication' | 'division';
+  answer: number;
+  explanation: string;
+  difficultyStage: number;
+}
+
+export interface EpicWordProblemExercise extends BaseExercise {
+  type: ExerciseType.EpicWordProblem;
+  problemText: string;
+  numbers: number[];
+  operations: ('addition' | 'subtraction')[];
+  answer: number;
+  explanation: string;
+}
+
+
+export type Exercise = MultipleChoiceExercise | NumberInputExercise | DecompositionSubtractionExercise | WordProblemExercise | EpicWordProblemExercise;
 
 export interface Topic {
   id: string;

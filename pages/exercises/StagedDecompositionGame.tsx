@@ -68,6 +68,7 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
     const [activeDigitIndex, setActiveDigitIndex] = useState(0);
 
     const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
+    const [explanation, setExplanation] = useState<React.ReactNode | null>(null);
     const [isStageComplete, setIsStageComplete] = useState(false);
     const [isGameComplete, setIsGameComplete] = useState(false);
 
@@ -102,6 +103,12 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
         setFeedback(null);
     }, [operation]);
 
+    const handleIncorrectClose = useCallback(() => {
+        setFeedback(null);
+        setExplanation(null);
+        setupProblem(stageIndex);
+    }, [setupProblem, stageIndex]);
+
     useEffect(() => {
         setupProblem(stageIndex);
     }, [stageIndex, setupProblem]);
@@ -121,7 +128,6 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
                         // Time's up!
                         setFeedback('incorrect');
                         resetStreak();
-                        setTimeout(() => setupProblem(stageIndex), 1500);
                         return null;
                     }
                     return prev - 10;
@@ -134,7 +140,7 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         }
-    }, [stageIndex, problem, resetStreak, setupProblem]);
+    }, [stageIndex, problem, resetStreak]);
 
     // Header Progress Bar Effect
     useEffect(() => {
@@ -224,7 +230,13 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
         } else {
             resetStreak();
             setFeedback('incorrect');
-            setTimeout(() => setupProblem(stageIndex), 1500);
+            const explainer = (
+              <div className="space-y-2">
+                <p>¡No pasa nada! La respuesta correcta para {problem.a} {operation === 'addition' ? '+' : '-'} {problem.b} era <strong>{correctAnswer}</strong>.</p>
+                <p>¡Vamos a intentar con uno nuevo!</p>
+              </div>
+            );
+            setExplanation(explainer);
         }
     };
 
@@ -323,7 +335,7 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
             </aside>
 
             {feedback === 'correct' && <FeedbackModal isCorrect={true} onNext={handleNext} />}
-            {feedback === 'incorrect' && <FeedbackModal isCorrect={false} onNext={() => { }} />}
+            {feedback === 'incorrect' && <FeedbackModal isCorrect={false} onNext={handleIncorrectClose} explanation={explanation} />}
         </div>
     );
 };

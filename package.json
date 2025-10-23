@@ -13,7 +13,8 @@
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.9.4",
     "@google/genai": "^1.26.0",
-    "zustand": "^5.0.8"
+    "zustand": "^5.0.8",
+    "@heroicons/react": "^2.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

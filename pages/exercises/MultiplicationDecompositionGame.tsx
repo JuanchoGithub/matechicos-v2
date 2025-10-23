@@ -8,7 +8,6 @@ import FeedbackModal from '../../components/FeedbackModal';
 import { SUBMIT_BUTTON, STAGES_CONFIG } from '../../constants';
 import NumberPad from '../../components/NumberPad';
 import StageProgressBar from '../../components/StageProgressBar';
-import { CheckCircleIcon, XCircleIcon } from '../../components/icons';
 import HelpButton from '../../components/HelpButton';
 
 const generateMultiplicationProblem = (stage: number): { a: number, b: number } => {
@@ -43,10 +42,8 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
     const [decomposedFinalAnswer, setDecomposedFinalAnswer] = useState<string[]>([]);
     const [activeFinalDigitIndex, setActiveFinalDigitIndex] = useState(0);
 
-
-    const [feedback, setFeedback] = useState<'correct' | null>(null);
-    const [stepFeedback, setStepFeedback] = useState<boolean[]>([]);
-
+    const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
+    const [explanation, setExplanation] = useState<React.ReactNode | null>(null);
     const [isGameComplete, setIsGameComplete] = useState(false);
 
     const { num1, num1Units, num1Tens, num2 } = useMemo(() => {
@@ -72,7 +69,7 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
         setTensAnswer('');
         setDecomposedFinalAnswer([]);
         setFeedback(null);
-        setStepFeedback([]);
+        setExplanation(null);
     }, []);
 
     useEffect(() => {
@@ -122,6 +119,13 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
         }
     };
 
+    const handleIncorrectClose = useCallback(() => {
+        setFeedback(null);
+        setExplanation(null);
+        setupProblem(stageIndex);
+    }, [setupProblem, stageIndex]);
+
+
     const handleAnswerSubmit = () => {
         let isStepCorrect = false;
         if (currentStep === 0) {
@@ -132,10 +136,6 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
             const finalAnswerNumber = parseInt(decomposedFinalAnswer.join(''), 10);
             isStepCorrect = finalAnswerNumber === correctFinalAnswer;
         }
-
-        const newStepFeedback = [...stepFeedback];
-        newStepFeedback[currentStep] = isStepCorrect;
-        setStepFeedback(newStepFeedback);
 
         if (isStepCorrect) {
             if (currentStep === 2) {
@@ -148,6 +148,22 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
             }
         } else {
             resetStreak();
+            setFeedback('incorrect');
+            let explainerText = '';
+            if (currentStep === 0) {
+                explainerText = `La respuesta correcta para ${num1Units} × ${num2} era ${correctUnitsAnswer}.`;
+            } else if (currentStep === 1) {
+                explainerText = `La respuesta correcta para ${num1Tens} × ${num2} era ${correctTensAnswer}.`;
+            } else if (currentStep === 2) {
+                explainerText = `La suma final de ${correctTensAnswer} + ${correctUnitsAnswer} daba ${correctFinalAnswer}.`;
+            }
+            const explainer = (
+              <div className="space-y-2">
+                <p>¡Ups! {explainerText}</p>
+                <p>¡No te preocupes, intentemos con otro ejercicio!</p>
+              </div>
+            );
+            setExplanation(explainer);
         }
     };
 
@@ -192,9 +208,8 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
         (currentStep === 2 && decomposedFinalAnswer.some(d => d === ''));
 
     const renderDecompositionSum = () => {
-        // Only show the results of previous steps if they have been answered correctly.
-        const num1Str = stepFeedback[1] === true ? String(correctTensAnswer) : '';
-        const num2Str = stepFeedback[0] === true ? String(correctUnitsAnswer) : '';
+        const num1Str = String(correctTensAnswer);
+        const num2Str = String(correctUnitsAnswer);
         
         const numCols = Math.max(String(correctTensAnswer).length, String(correctUnitsAnswer).length, decomposedFinalAnswer.length);
 
@@ -264,8 +279,6 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
                                 <span className="text-brand-secondary">{num1Units} × {num2} =</span>
                                 <div className="flex items-center gap-2">
                                     <input type="text" readOnly value={unitsAnswer} placeholder="?" className={`w-28 text-center font-bold p-2 rounded-lg border-2 ${currentStep === 0 ? 'border-brand-primary' : 'border-gray-200'} bg-gray-100`} />
-                                    {stepFeedback[0] === true && <CheckCircleIcon className="w-8 h-8 text-brand-correct" />}
-                                    {stepFeedback[0] === false && <XCircleIcon className="w-8 h-8 text-brand-incorrect" />}
                                 </div>
                             </div>
 
@@ -274,8 +287,6 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
                                 <span className="text-brand-primary">{num1Tens} × {num2} =</span>
                                 <div className="flex items-center gap-2">
                                     <input type="text" readOnly value={tensAnswer} placeholder="?" className={`w-28 text-center font-bold p-2 rounded-lg border-2 ${currentStep === 1 ? 'border-brand-primary' : 'border-gray-200'} bg-gray-100`} />
-                                    {stepFeedback[1] === true && <CheckCircleIcon className="w-8 h-8 text-brand-correct" />}
-                                    {stepFeedback[1] === false && <XCircleIcon className="w-8 h-8 text-brand-incorrect" />}
                                 </div>
                             </div>
 
@@ -285,10 +296,6 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
                                 <p className="text-lg text-center mb-2">Ahora sumamos los resultados:</p>
                                 <div className="flex items-center justify-center relative pr-10">
                                      {renderDecompositionSum()}
-                                     <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center">
-                                        {stepFeedback[2] === true && <CheckCircleIcon className="w-8 h-8 text-brand-correct" />}
-                                        {stepFeedback[2] === false && <XCircleIcon className="w-8 h-8 text-brand-incorrect" />}
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -310,7 +317,13 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
                 </div>
             </aside>
 
-            {feedback === 'correct' && <FeedbackModal isCorrect={true} onNext={handleNextProblem} />}
+            {feedback && (
+                <FeedbackModal 
+                    isCorrect={feedback === 'correct'} 
+                    onNext={feedback === 'correct' ? handleNextProblem : handleIncorrectClose}
+                    explanation={explanation}
+                />
+            )}
         </div>
     );
 };

@@ -6,6 +6,85 @@ import { ArrowLeftIcon, LightBulbIcon } from '../components/icons';
 
 type Operation = 'addition' | 'subtraction' | 'multiplication' | 'division';
 
+// New component for the detailed division tutorial
+const DivisionTutorialContent: React.FC = () => {
+    return (
+        <div className="bg-white/60 p-4 rounded-2xl font-sans text-left space-y-4 max-w-3xl mx-auto overflow-x-auto">
+            <h2 className="text-xl font-bold text-brand-text">Ejemplo: Dividamos 78 caramelos entre 3 amigos (78 ÷ 3)</h2>
+            
+            <div>
+                <h3 className="font-bold text-lg">Paso 1: Mirar el primer número del dividendo (78)</h3>
+                <p>Es el 7. ¿Cuántas veces entra el 3 en el 7 sin pasarse? ¡Entra 2 veces! (porque 2 × 3 = 6). Escribe el 2 arriba del 7.</p>
+                <pre className="mt-2 p-2 bg-gray-100 rounded-lg text-lg font-mono leading-tight">
+{`  2  
+ --- 
+3|78`}
+                </pre>
+            </div>
+
+            <div>
+                <h3 className="font-bold text-lg">Paso 2: Multiplicar y restar</h3>
+                <p>2 (del cociente) × 3 (divisor) = 6. Ponemos el 6 debajo del 7 y restamos: 7 - 6 = 1.</p>
+                <pre className="mt-2 p-2 bg-gray-100 rounded-lg text-lg font-mono leading-tight">
+{`  2  
+ --- 
+3|78 
+ -6  
+ --- 
+  1`}
+                </pre>
+            </div>
+
+            <div>
+                <h3 className="font-bold text-lg">Paso 3: Bajar el siguiente número</h3>
+                <p>Bajamos el 8 (del 78) al lado del 1. Ahora tenemos 18.</p>
+                <pre className="mt-2 p-2 bg-gray-100 rounded-lg text-lg font-mono leading-tight">
+{`  2  
+ --- 
+3|78 
+ -6↓ 
+ --- 
+  18`}
+                </pre>
+            </div>
+
+            <div>
+                <h3 className="font-bold text-lg">Paso 4: Repetir con el nuevo número (18)</h3>
+                <p>¿Cuántas veces entra el 3 en el 18? ¡Entra 6 veces! (porque 6 × 3 = 18). Escribimos el 6 en el cociente, arriba del 8.</p>
+                <pre className="mt-2 p-2 bg-gray-100 rounded-lg text-lg font-mono leading-tight">
+{`  26 
+ ----
+3|78 
+ -6↓ 
+ ----
+  18`}
+                </pre>
+            </div>
+
+            <div>
+                <h3 className="font-bold text-lg">Paso 5: Multiplicar y restar de nuevo</h3>
+                <p>6 (del cociente) × 3 (divisor) = 18. Restamos: 18 - 18 = 0.</p>
+                <pre className="mt-2 p-2 bg-gray-100 rounded-lg text-lg font-mono leading-tight">
+{`  26 
+ ----
+3|78 
+ -6↓ 
+ ----
+  18 
+ -18 
+ ----
+   0`}
+                </pre>
+            </div>
+
+            <div className="pt-4 border-t">
+                <p className="font-bold text-lg">¡Listo! 78 ÷ 3 = 26. A cada amigo le tocan 26 caramelos y no sobra ninguno (resto 0).</p>
+            </div>
+        </div>
+    );
+};
+
+
 // Helper to generate a simple problem
 const generateProblem = (operation: Operation) => {
     let a, b;
@@ -66,15 +145,8 @@ const operationExplanations: Record<Operation, { title: string; steps: string[] 
         ]
     },
     division: {
-        title: "Aprendé a Dividir",
-        steps: [
-            "¡Dividir es repartir en partes iguales!",
-            "Pensá: ¿cuántas veces entra el número más chico (divisor) en el número más grande (dividendo)?",
-            "¡Es como una multiplicación al revés!",
-            "Por ejemplo, para 12 ÷ 3, te preguntás: ¿qué número multiplicado por 3 da 12?",
-            "La respuesta es 4, ¡porque 3 × 4 = 12!",
-            "¡Así de fácil! ¡Ya sabés dividir!"
-        ]
+        title: "Aprendé a Dividir (División Larga)",
+        steps: [], // Replaced with the detailed component
     }
 };
 
@@ -329,14 +401,16 @@ const TutorialPage: React.FC = () => {
             
             <div className="w-full bg-brand-primary/10 p-4 rounded-3xl">
                 <h1 className="text-2xl md:text-3xl font-extrabold text-brand-primary mb-3 text-center">{explanation.title}</h1>
-                <ul className="flex flex-wrap justify-center gap-x-4 gap-y-2">
-                    {explanation.steps.map((step, index) => (
-                        <li key={index} className="flex items-center gap-2 bg-white/60 px-3 py-1 rounded-full shadow-sm">
-                            <span className="text-lg">✨</span>
-                            <span className="text-sm md:text-base">{step}</span>
-                        </li>
-                    ))}
-                </ul>
+                {operation === 'division' ? <DivisionTutorialContent /> : (
+                  <ul className="flex flex-wrap justify-center gap-x-4 gap-y-2">
+                      {explanation.steps.map((step, index) => (
+                          <li key={index} className="flex items-center gap-2 bg-white/60 px-3 py-1 rounded-full shadow-sm">
+                              <span className="text-lg">✨</span>
+                              <span className="text-sm md:text-base">{step}</span>
+                          </li>
+                      ))}
+                  </ul>
+                )}
             </div>
 
             <div className="w-full flex-grow flex flex-col gap-4">

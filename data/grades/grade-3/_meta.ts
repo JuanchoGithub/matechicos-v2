@@ -1,4 +1,6 @@
 import { Topic, ExerciseMode } from '../../../types';
+import { wordProblemExercises } from './word-problems';
+import { epicWordProblemExercises } from './epic-word-problems';
 
 export const grade3Topics: Topic[] = [
   {
@@ -19,21 +21,21 @@ export const grade3Topics: Topic[] = [
   {
     id: 'timed-multiplication-challenge',
     name: 'Multiplicaciones: Desafío de Velocidad',
-    icon: '✖️',
+    icon: '🚀',
     exercises: [],
     challengeType: 'timed-multiplication',
   },
   {
     id: 'timed-division-challenge',
     name: 'Divisiones: Desafío de Velocidad',
-    icon: '➗',
+    icon: '☄️',
     exercises: [],
     challengeType: 'timed-division',
   },
   {
     id: 'decomposition-subtraction',
     name: 'Restas por Descomposición',
-    icon: '📝',
+    icon: '➖',
     exercises: [], // Dynamically generated
     exerciseMode: ExerciseMode.StagedDecompositionSubtraction,
   },
@@ -47,8 +49,27 @@ export const grade3Topics: Topic[] = [
   {
     id: 'decomposition-multiplication',
     name: 'Multiplicación por Descomposición',
-    icon: '✍️',
+    icon: '✖️',
     exercises: [], // Dynamically generated
     exerciseMode: ExerciseMode.PedagogicalDecompositionMultiplication,
+  },
+  {
+    id: 'decomposition-division',
+    name: 'Divisiones por Descomposición',
+    icon: '➗',
+    exercises: [], // Dynamically generated
+    exerciseMode: ExerciseMode.PedagogicalDecompositionDivision,
+  },
+  {
+    id: 'word-problems-add-subtract',
+    name: 'Resolviendo Problemas',
+    icon: '🧠',
+    exercises: wordProblemExercises,
+  },
+  {
+    id: 'epic-word-problems',
+    name: 'Problemas Épicos',
+    icon: '🦸‍♂️',
+    exercises: epicWordProblemExercises,
   }
 ];
