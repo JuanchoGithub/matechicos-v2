@@ -22,24 +22,6 @@ interface StandardExerciseProps {
 
 const STAGE_THRESHOLD = 10;
 
-const BoldParser: React.FC<{ text: string }> = ({ text }) => {
-    // Split on the markdown-style bold delimiter, keeping the delimiter
-    // e.g., "Hello **world**!" -> ["Hello ", "**world**", "!"]
-    const parts = text.split(/(\*\*.*?\*\*)/g).filter(Boolean);
-    return (
-        <>
-            {parts.map((part, i) =>
-                part.startsWith('**') && part.endsWith('**') ? (
-                    <strong key={i}>{part.slice(2, -2)}</strong>
-                ) : (
-                    part
-                )
-            )}
-        </>
-    );
-};
-
-
 const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) => {
     const navigate = useNavigate();
     const { 
@@ -224,7 +206,7 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
                         <div className="space-y-2">
                             <p>¡Ojo! Uno de los números que elegiste no era el correcto.</p>
                             <p>Elegiste {selectedNumberValues.join(' y ')}, pero los números que necesitabas eran <strong>{wpExercise.numbers.join(' y ')}</strong>.</p>
-                            <p className="pt-2 border-t border-white/30 mt-2"><BoldParser text={wpExercise.explanation} /></p>
+                            <p className="pt-2 border-t border-white/30 mt-2" dangerouslySetInnerHTML={{ __html: wpExercise.explanation }}></p>
                         </div>
                     );
                 } else {
@@ -236,7 +218,7 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
                         explainer = (
                             <div className="space-y-2">
                                 <p>¡Los números que elegiste son correctos! Pero algo falló en la operación o en el resultado final.</p>
-                                <p className="pt-2 border-t border-white/30 mt-2"><BoldParser text={wpExercise.explanation} /></p>
+                                <p className="pt-2 border-t border-white/30 mt-2" dangerouslySetInnerHTML={{ __html: wpExercise.explanation }}></p>
                             </div>
                         );
                     }
@@ -247,7 +229,7 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
             if (!isCorrect) {
                 if (currentExercise.type === ExerciseType.EpicWordProblem) {
                     const wp = currentExercise;
-                    explainer = ( <div className="space-y-2"> <p>¡No te preocupes! Analicemos el problema:</p> <p className="bg-white/10 p-2 rounded italic">"{wp.problemText}"</p> <p><BoldParser text={wp.explanation} /></p> </div> );
+                    explainer = ( <div className="space-y-2"> <p>¡No te preocupes! Analicemos el problema:</p> <p className="bg-white/10 p-2 rounded italic">"{wp.problemText}"</p> <p dangerouslySetInnerHTML={{ __html: wp.explanation }}></p> </div> );
                 } else {
                     explainer = <p>La respuesta correcta era <strong>{currentExercise.answer}</strong>.</p>;
                 }
@@ -285,18 +267,28 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
     
     const renderEpicProblemMain = () => {
         const epicEx = currentExercise as EpicWordProblemExercise;
-        let equation = epicEx.numbers[0].toString();
-        const symbols = { addition: '+', subtraction: '-' };
-        epicEx.operations.forEach((op, index) => {
-            equation += ` ${symbols[op]} ${epicEx.numbers[index + 1]}`;
-        });
+        const isOriginalEpicProblem = topic.id === 'epic-word-problems';
+        
+        let equation = '';
+        if (isOriginalEpicProblem) {
+            equation = epicEx.numbers[0].toString();
+            const symbols = { addition: '+', subtraction: '-', multiplication: '×', division: '÷' };
+            epicEx.operations.forEach((op, index) => {
+                const symbol = symbols[op as keyof typeof symbols] || '?';
+                equation += ` ${symbol} ${epicEx.numbers[index + 1]}`;
+            });
+        }
 
         return (
             <div className="bg-white dark:bg-dark-surface p-4 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
-                <p className="text-2xl md:text-3xl font-bold mb-2">{epicEx.problemText}</p>
-                <div className="bg-gray-100 dark:bg-dark-subtle rounded-xl p-2 my-2">
-                    <p className="text-3xl md:text-4xl font-extrabold tracking-wider">{equation} = ?</p>
-                </div>
+                <p className="text-2xl md:text-3xl font-bold mb-2" dangerouslySetInnerHTML={{ __html: epicEx.problemText }}></p>
+                
+                {isOriginalEpicProblem && (
+                    <div className="bg-gray-100 dark:bg-dark-subtle rounded-xl p-2 my-2">
+                        <p className="text-3xl md:text-4xl font-extrabold tracking-wider">{equation} = ?</p>
+                    </div>
+                )}
+
                 <div className="flex-grow flex flex-col items-center justify-center relative w-full h-full min-h-[150px] sm:min-h-[200px] mt-2 border-4 border-gray-200 dark:border-dark-subtle rounded-xl">
                     <span className="absolute top-1 left-2 text-gray-400 dark:text-gray-500 font-sans text-sm">Tu Pizarra</span>
                     <DrawingCanvas ref={drawingCanvasRef} mode={drawingMode}>
@@ -334,7 +326,7 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
                                 </span>
                             );
                         }
-                        return <span key={index}>{part}</span>;
+                        return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
                     })}
                 </p>
             );

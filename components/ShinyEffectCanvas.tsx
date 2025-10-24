@@ -6,7 +6,6 @@ interface ShinyEffectCanvasProps {
 
 const ShinyEffectCanvas: React.FC<ShinyEffectCanvasProps> = ({ mode }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  // FIX: useRef requires an initial value. Initialize with null and update type.
   const animationFrameId = useRef<number | null>(null);
   const time = useRef(0);
 

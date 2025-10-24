@@ -7,6 +7,7 @@ import StagedDecompositionGame from './exercises/StagedDecompositionGame';
 import MultiplicationDecompositionGame from './exercises/MultiplicationDecompositionGame';
 import DivisionDecompositionGame from './exercises/DivisionDecompositionGame';
 import StandardExercise from './exercises/StandardExercise';
+import ReasoningGauntletPage from './exercises/ReasoningGauntletPage';
 
 const ExercisePage: React.FC = () => {
     const { gradeId, topicId } = useParams();
@@ -26,6 +27,9 @@ const ExercisePage: React.FC = () => {
     const mode = topic.exerciseMode ?? ExerciseMode.Standard;
 
     switch (mode) {
+        case ExerciseMode.ReasoningGauntlet:
+            return <ReasoningGauntletPage topic={topic} gradeId={gradeId} />;
+
         case ExerciseMode.PedagogicalDecompositionMultiplication:
             return <MultiplicationDecompositionGame topic={topic} gradeId={gradeId} />;
         

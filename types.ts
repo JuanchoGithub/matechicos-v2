@@ -1,9 +1,11 @@
+
 export enum ExerciseType {
   MultipleChoice = 'multipleChoice',
   NumberInput = 'numberInput',
   DecompositionSubtraction = 'decompositionSubtraction',
   WordProblem = 'wordProblem',
   EpicWordProblem = 'epicWordProblem',
+  ReasoningGauntlet = 'reasoningGauntlet',
 }
 
 export enum ExerciseMode {
@@ -13,6 +15,7 @@ export enum ExerciseMode {
   StagedDecompositionMultiplication = 'stagedDecompositionMultiplication', // Retained for addition/subtraction structure
   PedagogicalDecompositionMultiplication = 'pedagogicalDecompositionMultiplication', // New step-by-step mode
   PedagogicalDecompositionDivision = 'pedagogicalDecompositionDivision',
+  ReasoningGauntlet = 'reasoningGauntlet',
 }
 
 export interface BaseExercise {
@@ -53,13 +56,42 @@ export interface EpicWordProblemExercise extends BaseExercise {
   type: ExerciseType.EpicWordProblem;
   problemText: string;
   numbers: number[];
-  operations: ('addition' | 'subtraction')[];
+  operations: ('addition' | 'subtraction' | 'multiplication' | 'division')[];
   answer: number;
   explanation: string;
 }
 
+export interface SolutionStep {
+  name: string;
+  numbers: (string | number)[]; // Can reference previous step name or be a raw number
+  operation: 'addition' | 'subtraction' | 'multiplication' | 'division';
+  result: number;
+}
 
-export type Exercise = MultipleChoiceExercise | NumberInputExercise | DecompositionSubtractionExercise | WordProblemExercise | EpicWordProblemExercise;
+// Types for Reasoning Gauntlet number parsing
+export interface SimpleNumberInText {
+  text: string;
+  value: number;
+}
+
+export interface TranslatableNumberInText {
+  text: string;
+  prompt: string;
+  answer: number;
+}
+
+export type ProblemNumberInText = SimpleNumberInText | TranslatableNumberInText;
+
+
+export interface ReasoningGauntletExercise extends BaseExercise {
+    type: ExerciseType.ReasoningGauntlet;
+    problemText: string;
+    solution: SolutionStep[];
+    explanation: string;
+}
+
+
+export type Exercise = MultipleChoiceExercise | NumberInputExercise | DecompositionSubtractionExercise | WordProblemExercise | EpicWordProblemExercise | ReasoningGauntletExercise;
 
 export interface Topic {
   id: string;

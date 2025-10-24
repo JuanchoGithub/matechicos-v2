@@ -79,7 +79,6 @@ const TopicPage: React.FC = () => {
       <h2 className="text-2xl md:text-3xl text-gray-500 dark:text-gray-400 mb-6">{TOPIC_TITLE}</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {grade.topics.map((topic) => (
-          // FIX: The ref callback should not return a value. Wrapped the assignment in curly braces to ensure it returns void.
           <div key={topic.id} ref={(el) => { topicRefs.current[topic.id] = el; }}>
             <TopicCard topic={topic} gradeId={grade.id} />
           </div>

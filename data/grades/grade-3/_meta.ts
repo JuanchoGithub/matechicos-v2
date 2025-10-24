@@ -1,6 +1,7 @@
 import { Topic, ExerciseMode } from '../../../types';
 import { wordProblemExercises } from './word-problems';
 import { epicWordProblemExercises } from './epic-word-problems';
+import { reasoningGauntletExercises } from './reasoning-word-problems';
 
 export const grade3Topics: Topic[] = [
   {
@@ -71,5 +72,12 @@ export const grade3Topics: Topic[] = [
     name: 'Problemas Épicos',
     icon: '🦸‍♂️',
     exercises: epicWordProblemExercises,
+  },
+  {
+    id: 'reasoning-word-problems',
+    name: 'Problemas con Pistas',
+    icon: '🕵️‍♀️',
+    exercises: reasoningGauntletExercises,
+    exerciseMode: ExerciseMode.ReasoningGauntlet,
   }
 ];
