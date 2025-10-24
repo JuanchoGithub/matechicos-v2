@@ -63,7 +63,7 @@ const AppContent: React.FC = () => {
   return (
     <div className="min-h-screen font-sans text-brand-text dark:text-dark-text flex flex-col">
       <Header />
-      <main className="container mx-auto p-4 pb-20 flex-grow flex flex-col">
+      <main className="w-full max-w-7xl mx-auto p-4 pb-20 flex-grow flex flex-col">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/grade/:gradeId" element={<TopicPage />} />
