@@ -15,6 +15,8 @@ interface UiState {
   toggleSidebarPosition: () => void;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
+  overrideStreak: number | null;
+  setOverrideStreak: (streak: number | null) => void;
 }
 
 export const useUiStore = create<UiState>()(
@@ -38,6 +40,8 @@ export const useUiStore = create<UiState>()(
         set((state) => ({
           theme: state.theme === 'light' ? 'dark' : 'light',
         })),
+      overrideStreak: null,
+      setOverrideStreak: (streak) => set({ overrideStreak: streak }),
     }),
     {
       name: 'mathkids-ui-storage',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { grades } from '../data';
 import Button from '../components/Button';
@@ -102,12 +102,148 @@ const getOperation = (challengeType: Topic['challengeType']): Operation => {
     }
 };
 
+const AnimatedNumber: React.FC<{ value: number }> = ({ value }) => {
+    const [displayValue, setDisplayValue] = useState(0);
+
+    useEffect(() => {
+        const duration = 800;
+        const frameDuration = 1000 / 60;
+        const totalFrames = Math.round(duration / frameDuration);
+        let frame = 0;
+
+        const counter = setInterval(() => {
+            frame++;
+            const progress = frame / totalFrames;
+            const currentVal = Math.round(value * progress);
+            
+            if (progress >= 1) {
+                setDisplayValue(value);
+                clearInterval(counter);
+            } else {
+                setDisplayValue(currentVal);
+            }
+        }, frameDuration);
+
+        return () => clearInterval(counter);
+    }, [value]);
+
+    return <span>{displayValue}</span>;
+};
+
+const Confetti: React.FC = () => {
+    const confettiCount = 150;
+    const colors = ['#4A90E2', '#50E3C2', '#7ED321', '#F5A623', '#D0021B', '#F8E71C'];
+
+    return (
+        <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-50">
+            {Array.from({ length: confettiCount }).map((_, i) => {
+                const style = {
+                    left: `${Math.random() * 100}%`,
+                    width: `${Math.random() * 8 + 5}px`,
+                    height: `${Math.random() * 15 + 8}px`,
+                    backgroundColor: colors[Math.floor(Math.random() * colors.length)],
+                    animation: `fall ${Math.random() * 4 + 3}s linear ${Math.random() * 5}s infinite`,
+                    transform: `rotate(${Math.random() * 360}deg)`,
+                    opacity: Math.random() * 0.5 + 0.5,
+                };
+                return <div key={i} className="absolute top-[-20px]" style={style} />;
+            })}
+        </div>
+    );
+};
+
+
+// --- End Screen Components ---
+const ChallengeEndAnimation: React.FC<{ 
+    endReason: NonNullable<EndReasonState>, 
+    operation: Operation 
+}> = ({ endReason, operation }) => {
+    const [animatedProgress, setAnimatedProgress] = useState(0);
+
+    const totalProgress = useMemo(() => {
+        const { scoreAtEnd, wasWarmingUp, divisionPhaseAtEnd, divisionProgressAtEnd } = endReason;
+        
+        if (operation === 'division') {
+            const milestonesCount = 4;
+            const segmentWidth = 100 / milestonesCount;
+            if (wasWarmingUp && divisionPhaseAtEnd && divisionProgressAtEnd !== null) {
+                const progressInPhase = divisionProgressAtEnd / 10;
+                return ((divisionPhaseAtEnd - 1) * segmentWidth) + (progressInPhase * segmentWidth);
+            } else {
+                 return (milestonesCount - 1) * segmentWidth;
+            }
+        }
+
+        // Standard Challenge
+        const warmupPercentage = 40;
+        const playingPercentage = 60;
+        if (wasWarmingUp) {
+            const progressInWarmup = scoreAtEnd / WARMUP_COUNT;
+            return progressInWarmup * warmupPercentage;
+        } else {
+            const progressInChallenge = Math.min(scoreAtEnd / WINNING_SCORE, 1);
+            return warmupPercentage + (progressInChallenge * playingPercentage);
+        }
+    }, [endReason, operation]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setAnimatedProgress(totalProgress);
+        }, 300); // Increased delay to ensure animation triggers reliably
+        return () => clearTimeout(timer);
+    }, [totalProgress]);
+
+    const warmupPercentage = 40;
+    const playingPercentage = 60;
+    
+    const standardMilestones = [
+        warmupPercentage, 
+        ...standardDifficultyLevels
+            .filter(l => l.scoreThreshold > 0)
+            .map(l => warmupPercentage + (l.scoreThreshold / WINNING_SCORE) * playingPercentage)
+    ];
+
+    const divisionMilestones = [25, 50, 75];
+
+    return (
+        <div className="my-6 w-full">
+            <div className="relative w-full h-4 bg-gray-200 dark:bg-dark-subtle rounded-full">
+                {/* Milestones */}
+                {(operation === 'division' ? divisionMilestones : standardMilestones).map(pos => (
+                    <div key={pos} className="absolute top-[-4px] h-8 w-1 bg-gray-400 dark:bg-gray-500 rounded-full" style={{ left: `${pos}%`}} />
+                ))}
+                {/* Progress Bar */}
+                <div className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full transition-all duration-1000 ease-out" style={{ width: `${animatedProgress}%` }} />
+                {/* Runner */}
+                <div className="absolute top-1/2 -translate-y-[calc(50%+1.5rem)] -translate-x-1/2 text-3xl transition-all duration-1000 ease-out" style={{ left: `${animatedProgress}%` }}>
+                   <div className="relative animate-bounce">
+                      <span>🏃‍♂️</span>
+                   </div>
+                </div>
+            </div>
+            <div className="relative w-full flex justify-between text-xs sm:text-sm font-bold mt-2 px-1">
+                <span>🏁 Inicio</span>
+                <span>🏆 Meta</span>
+            </div>
+        </div>
+    );
+};
+
+
+type EndReasonState = {
+  type: 'win' | 'incorrect' | 'timeout';
+  scoreAtEnd: number;
+  streakAtEnd: number;
+  wasWarmingUp: boolean;
+  divisionPhaseAtEnd: number | null;
+  divisionProgressAtEnd: number | null;
+} | null;
 
 const ChallengePage: React.FC = () => {
     const { gradeId, topicId } = useParams();
     const navigate = useNavigate();
-    const { incrementStreak, resetStreak, recordCompletion, topicStats } = useProgressStore();
-    const { isTestMode, sidebarPosition } = useUiStore();
+    const { incrementStreak, resetStreak, recordCompletion, topicStats, recordFailedChallenge } = useProgressStore();
+    const { isTestMode, sidebarPosition, setOverrideStreak } = useUiStore();
 
     const topic = grades.find(g => g.id === gradeId)?.topics.find(t => t.id === topicId);
 
@@ -127,12 +263,27 @@ const ChallengePage: React.FC = () => {
 
     const [timeLeft, setTimeLeft] = useState(standardDifficultyLevels[0].time);
     const [maxTime, setMaxTime] = useState(standardDifficultyLevels[0].time);
-    const [isTimeResetting, setIsTimeResetting] = useState(false);
+    
+    const [endReason, setEndReason] = useState<EndReasonState>(null);
 
     const [showTrollEffect, setShowTrollEffect] = useState(false);
     const lastAnswerTimestamp = useRef<number>(0);
     const fastestTime = useRef<number>(Infinity);
     const timerIntervalRef = useRef<number | null>(null);
+    const gameStateRef = useRef(gameState);
+
+    useEffect(() => {
+        gameStateRef.current = gameState;
+    }, [gameState]);
+    
+    const getDivisionPhaseDescription = (phase: number) => {
+        switch (phase) {
+            case 1: return "Números de 1 cifra divididos por 2";
+            case 2: return "Números de 2 cifras divididos por 2";
+            case 3: return "Números de 2 cifras divididos por 3";
+            default: return "";
+        }
+    };
 
     const resetGame = useCallback(() => {
         setGameState('start');
@@ -144,23 +295,16 @@ const ChallengePage: React.FC = () => {
         }
         if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
         fastestTime.current = Infinity;
-        setIsTimeResetting(false);
-    }, [operation]);
+        setEndReason(null);
+        setOverrideStreak(null);
+    }, [operation, setOverrideStreak]);
     
     useEffect(() => {
         return () => {
             if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+            setOverrideStreak(null);
         };
-    }, []);
-
-    useEffect(() => {
-        if (isTimeResetting) {
-            // This timeout allows the DOM to update with the transition disabled,
-            // then re-enables it for the smooth countdown. A short duration is enough.
-            const timer = setTimeout(() => setIsTimeResetting(false), 20);
-            return () => clearTimeout(timer);
-        }
-    }, [isTimeResetting]);
+    }, [setOverrideStreak]);
 
     const handleCorrectAnswer = useCallback(() => {
         incrementStreak();
@@ -213,13 +357,14 @@ const ChallengePage: React.FC = () => {
 
             if (!isTrollMode && newScore >= WINNING_SCORE && operation !== 'division') {
                  setGameState('end');
+                 const finalStreak = useProgressStore.getState().streak;
+                 setEndReason({ type: 'win', scoreAtEnd: newScore, streakAtEnd: finalStreak, wasWarmingUp: false, divisionPhaseAtEnd: null, divisionProgressAtEnd: null });
+                 setOverrideStreak(finalStreak);
                  if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
                  if (topicId) {
-                     const finalStreak = useProgressStore.getState().streak;
                      recordCompletion(topicId, [], finalStreak);
                  }
             } else {
-                setIsTimeResetting(true);
                 if (!isTrollMode) {
                     const currentLevel = difficultyConfig.slice().reverse().find(level => newScore >= level.scoreThreshold);
                     const newTime = currentLevel!.time;
@@ -235,21 +380,30 @@ const ChallengePage: React.FC = () => {
         setProblem(prevProblem => generateProblem(operation, prevProblem, divisionWarmup.phase > 3 ? 4 : divisionWarmup.phase));
         lastAnswerTimestamp.current = Date.now();
 
-    }, [score, gameState, incrementStreak, isTrollMode, topicId, recordCompletion, operation, divisionWarmup]);
+    }, [score, gameState, incrementStreak, isTrollMode, topicId, recordCompletion, operation, divisionWarmup, setOverrideStreak]);
 
     const handleIncorrectAnswer = useCallback(() => {
-        resetStreak();
-        if (gameState === 'playing') {
-            if ((isTrollMode || operation === 'division') && topicId) {
-                const finalStreak = useProgressStore.getState().streak;
-                const timeToRecord = fastestTime.current === Infinity ? undefined : fastestTime.current;
-                recordCompletion(topicId, [], finalStreak, timeToRecord);
-            }
-            setGameState('end');
-            if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+        if (gameStateRef.current !== 'playing' && gameStateRef.current !== 'warmup') return;
+
+        if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+        const finalStreak = useProgressStore.getState().streak;
+        if (topicId) {
+            recordFailedChallenge(topicId, finalStreak);
         }
-        setProblem(prevProblem => generateProblem(operation, prevProblem, divisionWarmup.phase));
-    }, [gameState, isTrollMode, operation, recordCompletion, resetStreak, topicId, divisionWarmup.phase]);
+        setOverrideStreak(finalStreak);
+        const wasWarmingUp = gameState === 'warmup';
+        
+        setGameState('end');
+        setEndReason({
+            type: 'incorrect',
+            scoreAtEnd: score,
+            streakAtEnd: finalStreak,
+            wasWarmingUp: wasWarmingUp,
+            divisionPhaseAtEnd: (operation === 'division' && wasWarmingUp) ? divisionWarmup.phase : null,
+            divisionProgressAtEnd: (operation === 'division' && wasWarmingUp) ? divisionWarmup.progress : null,
+        });
+
+    }, [gameState, operation, recordFailedChallenge, topicId, score, divisionWarmup, setOverrideStreak]);
 
     const checkAnswer = useCallback(() => {
         if (isTestMode || parseInt(userAnswer, 10) === problem.answer) {
@@ -271,14 +425,27 @@ const ChallengePage: React.FC = () => {
              lastAnswerTimestamp.current = Date.now();
             timerIntervalRef.current = window.setInterval(() => {
                 setTimeLeft(prev => {
-                    if (prev <= 0) {
+                    if (prev <= 10) {
                         if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-                        if ((isTrollMode || operation === 'division') && topicId) {
-                             const finalStreak = useProgressStore.getState().streak;
-                             const timeToRecord = fastestTime.current === Infinity ? undefined : fastestTime.current;
-                             recordCompletion(topicId, [], finalStreak, timeToRecord);
+                        
+                        if (gameStateRef.current !== 'playing') {
+                            return 0;
                         }
+                        
+                        const finalStreak = useProgressStore.getState().streak;
+                        if (topicId) {
+                           recordFailedChallenge(topicId, finalStreak);
+                        }
+                        setOverrideStreak(finalStreak);
                         setGameState('end');
+                        setEndReason({
+                            type: 'timeout',
+                            scoreAtEnd: score,
+                            streakAtEnd: finalStreak,
+                            wasWarmingUp: false,
+                            divisionPhaseAtEnd: null,
+                            divisionProgressAtEnd: null,
+                        });
                         return 0;
                     }
                     return prev - 10;
@@ -287,10 +454,16 @@ const ChallengePage: React.FC = () => {
         } else {
             if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
         }
-    }, [gameState, isTrollMode, recordCompletion, topicId, operation]);
+
+        return () => {
+            if(timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+        }
+    }, [gameState, isTrollMode, recordFailedChallenge, topicId, operation, score, setOverrideStreak]);
 
 
     const startGame = (troll = false) => {
+        resetStreak();
+        setOverrideStreak(null);
         setIsTrollMode(troll);
         setScore(0);
         if (operation === 'division') {
@@ -309,18 +482,15 @@ const ChallengePage: React.FC = () => {
         style.id = styleId;
         style.innerHTML = `
         @keyframes zoom-out-fade { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
-        .animate-\\[zoom-out-fade_0\\.6s_ease-out_forwards\\] { animation: zoom-out-fade 0.6s ease-out forwards; }`;
+        .animate-\\[zoom-out-fade_0\\.6s_ease-out_forwards\\] { animation: zoom-out-fade 0.6s ease-out forwards; }
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }`;
         document.head.appendChild(style);
     }, []);
-
-    const getDivisionPhaseDescription = (phase: number) => {
-        switch (phase) {
-            case 1: return "Números de 1 cifra divididos por 2";
-            case 2: return "Números de 2 cifras divididos por 2";
-            case 3: return "Números de 2 cifras divididos por 3";
-            default: return "";
-        }
-    };
 
     if (gameState === 'start' || gameState === 'end') {
         const hasCompletedBefore = topicId && topicStats[topicId] && topicStats[topicId].completions > 0;
@@ -336,41 +506,71 @@ const ChallengePage: React.FC = () => {
         const description = operation === 'division' ? divisionDescription : defaultDescription;
 
         return (
-             <div className="max-w-2xl mx-auto p-4 flex-grow flex flex-col justify-center">
-                 <div className="bg-white dark:bg-dark-surface p-6 md:p-8 rounded-3xl shadow-2xl text-center">
-                    {gameState === 'start' ? (
-                        <>
-                             <h1 className="text-4xl md:text-5xl font-extrabold text-brand-primary dark:text-dark-primary mb-4">{topic.name}</h1>
-                            <p className="text-lg mb-4">{description}</p>
-                            <div className="flex flex-col items-center gap-4">
-                                <Button onClick={() => startGame(false)} className="w-full md:w-1/2">Comenzar Desafío</Button>
-                                {hasCompletedBefore && operation !== 'division' && (
+             <>
+                {gameState === 'end' && endReason?.type === 'win' && <Confetti />}
+                 <div className="max-w-2xl mx-auto p-4 flex-grow flex flex-col justify-center">
+                     <div className="bg-white dark:bg-dark-surface p-6 md:p-8 rounded-3xl shadow-2xl text-center relative">
+                        {gameState === 'start' ? (
+                            <>
+                                 <h1 className="text-4xl md:text-5xl font-extrabold text-brand-primary dark:text-dark-primary mb-4">{topic.name}</h1>
+                                <p className="text-lg mb-4">{description}</p>
+                                <div className="flex flex-col items-center gap-4">
+                                    <Button onClick={() => startGame(false)} className="w-full md:w-1/2">Comenzar Desafío</Button>
+                                    {hasCompletedBefore && operation !== 'division' && (
+                                        <>
+                                            <Button onClick={() => startGame(true)} variant='secondary' className="w-full md:w-1/2 animate-pulse">😈 MODO TROLL 😈</Button>
+                                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Modo Troll: ¡Intentá responder en menos de 500ms!</p>
+                                        </>
+                                    )}
+                                </div>
+                            </>
+                        ) : ( // gameState === 'end'
+                             <>
+                                {endReason?.type === 'win' ? (
                                     <>
-                                        <Button onClick={() => startGame(true)} variant='secondary' className="w-full md:w-1/2 animate-pulse">😈 MODO TROLL 😈</Button>
-                                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Modo Troll: ¡Intentá responder en menos de 500ms!</p>
+                                        <h1 className="text-5xl font-extrabold text-green-500 mb-4">¡DESAFÍO SUPERADO!</h1>
+                                        <ChallengeEndAnimation endReason={endReason!} operation={operation}/>
+                                    </>
+                                ) : (
+                                    <>
+                                        <h1 className="text-5xl font-extrabold text-brand-primary dark:text-dark-primary mb-2">¡Casi lo lográs!</h1>
+                                        <p className="text-lg text-gray-600 dark:text-gray-400">¡No te rindas! Mirá hasta dónde llegaste:</p>
+                                        
+                                        {endReason && <ChallengeEndAnimation endReason={endReason} operation={operation}/>}
+
+                                        <div className="text-base bg-gray-100 dark:bg-dark-subtle p-4 rounded-lg mt-6 text-left space-y-2">
+                                            <p><strong>Resultado:</strong> {endReason?.type === 'timeout' ? '¡Se acabó el tiempo!' : 'Respuesta incorrecta.'}</p>
+                                            <p><strong>Puntaje Final:</strong> <span className="font-bold text-brand-secondary dark:text-dark-secondary"><AnimatedNumber value={endReason?.scoreAtEnd ?? 0} /></span></p>
+                                            <p><strong>Racha Lograda:</strong> <span className="font-bold text-yellow-500"><AnimatedNumber value={endReason?.streakAtEnd ?? 0} /> 🔥</span></p>
+                                            {endReason?.wasWarmingUp ? (
+                                                <p><strong>Etapa:</strong> Estabas en la fase de {' '}
+                                                {operation === 'division' && endReason.divisionPhaseAtEnd ? 
+                                                    `calentamiento (${getDivisionPhaseDescription(endReason.divisionPhaseAtEnd)})` : 
+                                                    'calentamiento'}.
+                                                </p>
+                                            ) : (
+                                                <>
+                                                    <p><strong>Etapa:</strong> Prueba de velocidad.</p>
+                                                    {!isTrollMode && operation !== 'division' && endReason && endReason.scoreAtEnd < WINNING_SCORE && (
+                                                        <p><strong>Para ganar te faltaron:</strong> <span className="font-bold"><AnimatedNumber value={Math.max(0, WINNING_SCORE - (endReason?.scoreAtEnd ?? 0))} /></span> puntos.</p>
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
                                     </>
                                 )}
-                            </div>
-                        </>
-                    ) : ( // gameState === 'end'
-                         <>
-                            {!isTrollMode && score >= WINNING_SCORE && operation !== 'division' ? (
-                                <h1 className="text-5xl font-extrabold text-green-500 mb-4">¡DESAFÍO SUPERADO!</h1>
-                            ) : (
-                                <h1 className="text-5xl font-extrabold text-brand-primary dark:text-dark-primary mb-4">¡Juego Terminado!</h1>
-                            )}
-                            <p className="text-3xl mb-4">Tu puntaje: <span className="font-bold">{score}</span></p>
-                            {isTrollMode && fastestTime.current !== Infinity && (
-                                <p className="text-2xl mb-4">Tu respuesta más rápida: <span className="font-bold text-brand-secondary dark:text-dark-secondary">{fastestTime.current}ms</span></p>
-                            )}
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                                <Button onClick={resetGame}>Jugar de nuevo</Button>
-                                <Button onClick={() => navigate(`/grade/${gradeId}`)} variant="ghost">Elegir otro tema</Button>
-                            </div>
-                         </>
-                    )}
-                 </div>
-            </div>
+                                {isTrollMode && fastestTime.current !== Infinity && (
+                                    <p className="text-2xl mt-4">Tu respuesta más rápida: <span className="font-bold text-brand-secondary dark:text-dark-secondary">{fastestTime.current}ms</span></p>
+                                )}
+                                <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
+                                    <Button onClick={resetGame}>Jugar de nuevo</Button>
+                                    <Button onClick={() => navigate(`/grade/${gradeId}`)} variant="ghost">Elegir otro tema</Button>
+                                </div>
+                             </>
+                        )}
+                     </div>
+                </div>
+             </>
         )
     }
 
@@ -413,7 +613,7 @@ const ChallengePage: React.FC = () => {
                     {gameState === 'playing' && (
                         <div className="w-full bg-gray-200 dark:bg-dark-subtle rounded-full h-4 mb-4 overflow-hidden">
                             <div 
-                                className={`bg-gradient-to-r from-green-400 to-blue-500 h-4 rounded-full ease-linear ${isTimeResetting ? 'transition-none' : 'transition-width duration-100'}`} 
+                                className={`bg-gradient-to-r from-green-400 to-blue-500 h-4 rounded-full ease-linear`} 
                                 style={{ width: `${(timeLeft / maxTime) * 100}%` }}
                             ></div>
                         </div>

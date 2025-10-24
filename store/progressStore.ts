@@ -21,6 +21,7 @@ interface ProgressState {
   incrementStreak: () => void;
   resetStreak: () => void;
   recordCompletion: (topicId: string, exerciseIdsToClear: string[], currentStreak: number, time?: number) => void;
+  recordFailedChallenge: (topicId: string, streak: number) => void;
   recordCorrectAnswerForTopic: (topicId: string, stageThreshold: number) => void;
   getTopicProgress: (topicId: string) => TopicProgress;
 }
@@ -74,11 +75,29 @@ export const useProgressStore = create<ProgressState>()(
           },
         }));
       },
+      
+      recordFailedChallenge: (topicId, streak) => {
+        set((state) => {
+          const currentStats = state.topicStats[topicId] || { ...initialTopicStats };
+          const newStats: TopicStats = {
+            ...currentStats,
+            // Always store the highest streak achieved
+            longestStreak: Math.max(currentStats.longestStreak, streak),
+          };
+          return {
+            topicStats: {
+              ...state.topicStats,
+              [topicId]: newStats,
+            },
+          };
+        });
+      },
 
       recordCompletion: (topicId, exerciseIdsToClear, currentStreak, time) => {
         const currentStats = get().topicStats[topicId] || { ...initialTopicStats };
         const newStats: TopicStats = {
           completions: currentStats.completions + 1,
+          // Update the longest streak on completion as well, if it's a new record
           longestStreak: Math.max(currentStats.longestStreak, currentStreak),
           bestTime: currentStats.bestTime,
         };

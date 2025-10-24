@@ -533,15 +533,7 @@ const TutorialPage: React.FC = () => {
 
 
     return (
-        <div className="flex flex-col gap-4 h-full flex-grow relative">
-            <button 
-                onClick={() => navigate(-1)} 
-                className="absolute top-4 right-4 z-20 flex items-center gap-2 px-3 py-2 bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm rounded-full shadow-md hover:bg-gray-200 dark:hover:bg-dark-subtle transition-colors"
-                aria-label="Volver"
-            >
-                <ArrowLeftIcon className="w-6 h-6" /> <span className="hidden sm:inline">Volver</span>
-            </button>
-            
+        <div className="flex flex-col gap-4 h-full flex-grow">
             <div className="w-full bg-brand-primary/10 dark:bg-dark-primary/10 p-4 rounded-3xl">
                 <h1 className="text-2xl md:text-3xl font-extrabold text-brand-primary dark:text-dark-primary mb-3 text-center">{explanation.title}</h1>
                 <GameModeExplanation gameMode={gameMode} operation={operation} />
@@ -558,20 +550,21 @@ const TutorialPage: React.FC = () => {
             </div>
 
             <div className="w-full flex-grow flex flex-col gap-4">
-                 { feedbackMessage && (
-                     <div className={`p-3 rounded-2xl flex items-start gap-3 transition-colors ${isCorrect === true ? 'bg-green-100 dark:bg-green-900/50' : isCorrect === false ? 'bg-red-100 dark:bg-red-900/50' : 'bg-blue-100 dark:bg-blue-900/50'}`}>
-                         <LightBulbIcon className={`w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 mt-1 ${isCorrect === true ? 'text-green-500 dark:text-green-400' : isCorrect === false ? 'text-red-500 dark:text-red-400' : 'text-blue-500 dark:text-blue-400'}`} />
-                         <div>
-                             <p className="font-bold text-md sm:text-lg">{isCorrect ? '¡Excelente!' : 'Un consejo:'}</p>
-                             <p className="text-sm sm:text-base whitespace-pre-line">{feedbackMessage}</p>
-                         </div>
-                    </div>
-                )}
-                
                 <div className="flex-grow flex flex-col md:flex-row gap-4">
-                    <main className="bg-white dark:bg-dark-surface p-4 rounded-3xl shadow-2xl text-center flex-grow flex flex-col items-center justify-center min-h-[250px]">
-                        <p className="text-lg md:text-xl mb-2 sm:mb-4">¡Ahora, a practicar!</p>
-                        {renderProblemContent()}
+                    <main className="bg-white dark:bg-dark-surface p-4 rounded-3xl shadow-2xl flex-grow flex flex-col min-h-[250px]">
+                        { feedbackMessage && (
+                            <div className={`p-3 rounded-2xl flex items-start gap-3 transition-colors text-left ${isCorrect === true ? 'bg-green-100 dark:bg-green-900/50' : isCorrect === false ? 'bg-red-100 dark:bg-red-900/50' : 'bg-blue-100 dark:bg-blue-900/50'}`}>
+                                <LightBulbIcon className={`w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 mt-1 ${isCorrect === true ? 'text-green-500 dark:text-green-400' : isCorrect === false ? 'text-red-500 dark:text-red-400' : 'text-blue-500 dark:text-blue-400'}`} />
+                                <div>
+                                    <p className="font-bold text-md sm:text-lg">{isCorrect ? '¡Excelente!' : 'Un consejo:'}</p>
+                                    <p className="text-sm sm:text-base whitespace-pre-line">{feedbackMessage}</p>
+                                </div>
+                           </div>
+                       )}
+                        <div className="flex-grow flex flex-col items-center justify-center text-center">
+                            <p className="text-lg md:text-xl mt-4 mb-2 sm:mb-4">¡Ahora, a practicar!</p>
+                            {renderProblemContent()}
+                        </div>
                     </main>
 
                     <aside className="w-full md:max-w-xs lg:max-w-sm flex-shrink-0">
