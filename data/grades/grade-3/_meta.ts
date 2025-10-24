@@ -47,13 +47,6 @@ export const grade3Topics: Topic[] = [
     exerciseMode: ExerciseMode.StagedDecompositionAddition,
   },
   {
-    id: 'decomposition-addition-test',
-    name: 'Sumas - Pruebas',
-    icon: '🧪',
-    exercises: [], // Dynamically generated
-    exerciseMode: ExerciseMode.StagedDecompositionAddition,
-  },
-  {
     id: 'decomposition-multiplication',
     name: 'Multiplicación por Descomposición',
     icon: '✖️',

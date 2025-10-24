@@ -11,7 +11,6 @@ import SidebarToggleButton from '../components/SidebarToggleButton';
 
 const WARMUP_COUNT = 20;
 const WINNING_SCORE = 70;
-const TROLL_MODE_THRESHOLD = 500; // ms
 
 const standardDifficultyLevels = [
   { scoreThreshold: 0, time: 20000 },
@@ -21,6 +20,30 @@ const standardDifficultyLevels = [
   { scoreThreshold: 40, time: 6000 },
   { scoreThreshold: 50, time: 2000 },
   { scoreThreshold: 60, time: 1000 },
+];
+
+const multiplicationDifficultyLevels = standardDifficultyLevels.map(level => ({
+    ...level,
+    time: level.time * 2,
+}));
+
+const trollModeStages = [
+  { count: 20, time: null, name: 'Calentamiento Troll' }, // Stage 0
+  { count: 10, time: 2000, name: 'Nivel 1 (2s)' },         // Stage 1
+  { count: 10, time: 1000, name: 'Nivel 2 (1s)' },         // Stage 2
+  { count: 5, time: 500, name: 'Nivel 3 (0.5s)' },          // Stage 3
+];
+
+const multiplicationTrollModeStages = trollModeStages.map(stage => ({
+    ...stage,
+    time: stage.time ? stage.time * 2 : null,
+}));
+
+const divisionTrollModeStages = [
+  { count: 20, time: null, name: 'Calentamiento Troll' }, // Stage 0
+  { count: 10, time: 5000, name: 'Nivel 1 (5s)' },         // Stage 1
+  { count: 10, time: 3000, name: 'Nivel 2 (3s)' },         // Stage 2
+  { count: 5, time: 1500, name: 'Nivel 3 (1.5s)' },       // Stage 3
 ];
 
 const divisionDifficultyLevels = Array.from({ length: 26 }, (_, i) => ({
@@ -155,61 +178,23 @@ const Confetti: React.FC = () => {
 
 // --- End Screen Components ---
 const ChallengeEndAnimation: React.FC<{ 
-    endReason: NonNullable<EndReasonState>, 
-    operation: Operation 
-}> = ({ endReason, operation }) => {
+    progressPercentage: number;
+    milestones: number[];
+}> = ({ progressPercentage, milestones }) => {
     const [animatedProgress, setAnimatedProgress] = useState(0);
-
-    const totalProgress = useMemo(() => {
-        const { scoreAtEnd, wasWarmingUp, divisionPhaseAtEnd, divisionProgressAtEnd } = endReason;
-        
-        if (operation === 'division') {
-            const milestonesCount = 4;
-            const segmentWidth = 100 / milestonesCount;
-            if (wasWarmingUp && divisionPhaseAtEnd && divisionProgressAtEnd !== null) {
-                const progressInPhase = divisionProgressAtEnd / 10;
-                return ((divisionPhaseAtEnd - 1) * segmentWidth) + (progressInPhase * segmentWidth);
-            } else {
-                 return (milestonesCount - 1) * segmentWidth;
-            }
-        }
-
-        // Standard Challenge
-        const warmupPercentage = 40;
-        const playingPercentage = 60;
-        if (wasWarmingUp) {
-            const progressInWarmup = scoreAtEnd / WARMUP_COUNT;
-            return progressInWarmup * warmupPercentage;
-        } else {
-            const progressInChallenge = Math.min(scoreAtEnd / WINNING_SCORE, 1);
-            return warmupPercentage + (progressInChallenge * playingPercentage);
-        }
-    }, [endReason, operation]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            setAnimatedProgress(totalProgress);
-        }, 300); // Increased delay to ensure animation triggers reliably
+            setAnimatedProgress(progressPercentage);
+        }, 300); 
         return () => clearTimeout(timer);
-    }, [totalProgress]);
-
-    const warmupPercentage = 40;
-    const playingPercentage = 60;
-    
-    const standardMilestones = [
-        warmupPercentage, 
-        ...standardDifficultyLevels
-            .filter(l => l.scoreThreshold > 0)
-            .map(l => warmupPercentage + (l.scoreThreshold / WINNING_SCORE) * playingPercentage)
-    ];
-
-    const divisionMilestones = [25, 50, 75];
+    }, [progressPercentage]);
 
     return (
         <div className="my-6 w-full">
             <div className="relative w-full h-4 bg-gray-200 dark:bg-dark-subtle rounded-full">
                 {/* Milestones */}
-                {(operation === 'division' ? divisionMilestones : standardMilestones).map(pos => (
+                {milestones.map(pos => (
                     <div key={pos} className="absolute top-[-4px] h-8 w-1 bg-gray-400 dark:bg-gray-500 rounded-full" style={{ left: `${pos}%`}} />
                 ))}
                 {/* Progress Bar */}
@@ -237,21 +222,39 @@ type EndReasonState = {
   wasWarmingUp: boolean;
   divisionPhaseAtEnd: number | null;
   divisionProgressAtEnd: number | null;
+  trollWin?: boolean;
+  trollStage?: number;
+  trollCountInStage?: number;
+} | null;
+
+type NewlyAwardedMedal = {
+    topicId: string;
+    medal: 'bronze' | 'silver' | 'gold' | 'platinum' | 'rainbow';
 } | null;
 
 const ChallengePage: React.FC = () => {
     const { gradeId, topicId } = useParams();
     const navigate = useNavigate();
-    const { incrementStreak, resetStreak, recordCompletion, topicStats, recordFailedChallenge } = useProgressStore();
+    const { incrementStreak, resetStreak, topicStats, updateChallengeStats } = useProgressStore();
     const { isTestMode, sidebarPosition, setOverrideStreak } = useUiStore();
 
     const topic = grades.find(g => g.id === gradeId)?.topics.find(t => t.id === topicId);
 
-    if (!topic) {
+    if (!topic || !topicId) {
         return <div className="text-center">Desafío no encontrado.</div>;
     }
 
     const operation = getOperation(topic.challengeType);
+
+    const activeTrollStages = useMemo(() => {
+        if (operation === 'multiplication') {
+            return multiplicationTrollModeStages;
+        }
+        if (operation === 'division') {
+            return divisionTrollModeStages;
+        }
+        return trollModeStages;
+    }, [operation]);
 
     const [gameState, setGameState] = useState<'start' | 'warmup' | 'playing' | 'end'>('start');
     const [isTrollMode, setIsTrollMode] = useState(false);
@@ -260,15 +263,15 @@ const ChallengePage: React.FC = () => {
     const [userAnswer, setUserAnswer] = useState('');
     const [score, setScore] = useState(0);
     const [divisionWarmup, setDivisionWarmup] = useState({ phase: 1, progress: 0 });
+    const [trollProgress, setTrollProgress] = useState({ stage: 0, countInStage: 0 });
 
     const [timeLeft, setTimeLeft] = useState(standardDifficultyLevels[0].time);
     const [maxTime, setMaxTime] = useState(standardDifficultyLevels[0].time);
     
     const [endReason, setEndReason] = useState<EndReasonState>(null);
+    const [newlyAwardedMedal, setNewlyAwardedMedal] = useState<NewlyAwardedMedal>(null);
 
-    const [showTrollEffect, setShowTrollEffect] = useState(false);
-    const lastAnswerTimestamp = useRef<number>(0);
-    const fastestTime = useRef<number>(Infinity);
+
     const timerIntervalRef = useRef<number | null>(null);
     const gameStateRef = useRef(gameState);
 
@@ -294,9 +297,9 @@ const ChallengePage: React.FC = () => {
             setDivisionWarmup({ phase: 1, progress: 0 });
         }
         if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-        fastestTime.current = Infinity;
         setEndReason(null);
         setOverrideStreak(null);
+        setNewlyAwardedMedal(null);
     }, [operation, setOverrideStreak]);
     
     useEffect(() => {
@@ -305,19 +308,90 @@ const ChallengePage: React.FC = () => {
             setOverrideStreak(null);
         };
     }, [setOverrideStreak]);
+    
+    const handleGameEnd = useCallback((didWin: boolean, reason: 'incorrect' | 'timeout' | 'win') => {
+        if (gameStateRef.current !== 'playing' && gameStateRef.current !== 'warmup') return;
+
+        if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+        const finalStreak = useProgressStore.getState().streak;
+        
+        // Medal detection logic
+        const statsBefore = useProgressStore.getState().topicStats[topicId] || {};
+        const medalsBefore = statsBefore.medals || {};
+        
+        updateChallengeStats(topicId, finalStreak, score, isTrollMode, trollProgress.stage, didWin);
+        
+        const statsAfter = useProgressStore.getState().topicStats[topicId] || {};
+        const medalsAfter = statsAfter.medals || {};
+
+        let bestNewMedal: NewlyAwardedMedal = null;
+        const medalOrder: Array<'bronze' | 'silver' | 'gold' | 'platinum' | 'rainbow'> = ['bronze', 'silver', 'gold', 'platinum', 'rainbow'];
+        for (const medal of [...medalOrder].reverse()) {
+            if (medalsAfter[medal] && !medalsBefore[medal]) {
+                bestNewMedal = { topicId: topicId, medal: medal };
+                break;
+            }
+        }
+        setNewlyAwardedMedal(bestNewMedal);
+
+        setOverrideStreak(finalStreak);
+
+        // Set end reason for UI
+        const wasWarmingUp = gameState === 'warmup';
+        
+        if (isTrollMode) {
+            setEndReason({
+                type: didWin ? 'win' : reason, trollWin: didWin, scoreAtEnd: score, streakAtEnd: finalStreak,
+                wasWarmingUp: false, divisionPhaseAtEnd: null, divisionProgressAtEnd: null,
+                trollStage: trollProgress.stage, trollCountInStage: trollProgress.countInStage,
+            });
+        } else {
+            setEndReason({
+                type: didWin ? 'win' : reason,
+                scoreAtEnd: score,
+                streakAtEnd: finalStreak,
+                wasWarmingUp: wasWarmingUp,
+                divisionPhaseAtEnd: (operation === 'division' && wasWarmingUp) ? divisionWarmup.phase : null,
+                divisionProgressAtEnd: (operation === 'division' && wasWarmingUp) ? divisionWarmup.progress : null,
+            });
+        }
+
+        setGameState('end');
+
+    }, [topicId, score, isTrollMode, trollProgress.stage, setOverrideStreak, gameState, operation, divisionWarmup.phase, divisionWarmup.progress, updateChallengeStats]);
+
 
     const handleCorrectAnswer = useCallback(() => {
         incrementStreak();
         
         if (isTrollMode) {
-            const timeTaken = Date.now() - lastAnswerTimestamp.current;
-            if (timeTaken < fastestTime.current) {
-                fastestTime.current = timeTaken;
+            const newCountInStage = trollProgress.countInStage + 1;
+            const currentStage = trollProgress.stage;
+            const currentStageConfig = activeTrollStages[currentStage];
+            const newTotalScore = score + 1;
+            setScore(newTotalScore);
+            
+            if (newCountInStage >= currentStageConfig.count) {
+                const nextStage = currentStage + 1;
+                if (nextStage >= activeTrollStages.length) {
+                    handleGameEnd(true, 'win');
+                    return; 
+                } else {
+                    setTrollProgress({ stage: nextStage, countInStage: 0 });
+                    const nextStageConfig = activeTrollStages[nextStage];
+                    if (nextStageConfig.time) {
+                        setMaxTime(nextStageConfig.time);
+                        setTimeLeft(nextStageConfig.time);
+                    }
+                }
+            } else {
+                setTrollProgress(prev => ({ ...prev, countInStage: newCountInStage }));
+                if (currentStageConfig.time) {
+                    setTimeLeft(currentStageConfig.time);
+                }
             }
-            if (timeTaken < TROLL_MODE_THRESHOLD) {
-                setShowTrollEffect(true);
-                setTimeout(() => setShowTrollEffect(false), 600);
-            }
+            setProblem(prev => generateProblem(operation, prev, operation === 'division' ? 4 : 1));
+            return;
         }
         
         const newScore = score + 1;
@@ -343,76 +417,47 @@ const ChallengePage: React.FC = () => {
                     setDivisionWarmup(prev => ({ ...prev, progress: newProgress }));
                     setProblem(prev => generateProblem(operation, prev, divisionWarmup.phase));
                 }
-            } else { // Standard warmup
+            } else { 
                 if (newScore >= WARMUP_COUNT) {
                     setGameState('playing');
                     setScore(0);
-                    const initialTime = isTrollMode ? 2000 : standardDifficultyLevels[0].time;
+                    const initialTime = (operation === 'multiplication' ? multiplicationDifficultyLevels : standardDifficultyLevels)[0].time;
                     setTimeLeft(initialTime);
                     setMaxTime(initialTime);
                 }
             }
         } else if (gameState === 'playing') {
-            const difficultyConfig = operation === 'division' ? divisionDifficultyLevels : standardDifficultyLevels;
-
-            if (!isTrollMode && newScore >= WINNING_SCORE && operation !== 'division') {
-                 setGameState('end');
-                 const finalStreak = useProgressStore.getState().streak;
-                 setEndReason({ type: 'win', scoreAtEnd: newScore, streakAtEnd: finalStreak, wasWarmingUp: false, divisionPhaseAtEnd: null, divisionProgressAtEnd: null });
-                 setOverrideStreak(finalStreak);
-                 if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-                 if (topicId) {
-                     recordCompletion(topicId, [], finalStreak);
-                 }
+            if (newScore >= WINNING_SCORE) {
+                 handleGameEnd(true, 'win');
             } else {
-                if (!isTrollMode) {
-                    const currentLevel = difficultyConfig.slice().reverse().find(level => newScore >= level.scoreThreshold);
-                    const newTime = currentLevel!.time;
-                    setMaxTime(newTime);
-                    setTimeLeft(newTime);
+                let difficultyConfig;
+                if (operation === 'division') {
+                    difficultyConfig = divisionDifficultyLevels;
+                } else if (operation === 'multiplication') {
+                    difficultyConfig = multiplicationDifficultyLevels;
                 } else {
-                     setMaxTime(2000);
-                     setTimeLeft(2000);
+                    difficultyConfig = standardDifficultyLevels;
                 }
+                const currentLevel = difficultyConfig.slice().reverse().find(level => newScore >= level.scoreThreshold);
+                const newTime = currentLevel!.time;
+                setMaxTime(newTime);
+                setTimeLeft(newTime);
             }
         } 
         
         setProblem(prevProblem => generateProblem(operation, prevProblem, divisionWarmup.phase > 3 ? 4 : divisionWarmup.phase));
-        lastAnswerTimestamp.current = Date.now();
-
-    }, [score, gameState, incrementStreak, isTrollMode, topicId, recordCompletion, operation, divisionWarmup, setOverrideStreak]);
-
-    const handleIncorrectAnswer = useCallback(() => {
-        if (gameStateRef.current !== 'playing' && gameStateRef.current !== 'warmup') return;
-
-        if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-        const finalStreak = useProgressStore.getState().streak;
-        if (topicId) {
-            recordFailedChallenge(topicId, finalStreak);
-        }
-        setOverrideStreak(finalStreak);
-        const wasWarmingUp = gameState === 'warmup';
         
-        setGameState('end');
-        setEndReason({
-            type: 'incorrect',
-            scoreAtEnd: score,
-            streakAtEnd: finalStreak,
-            wasWarmingUp: wasWarmingUp,
-            divisionPhaseAtEnd: (operation === 'division' && wasWarmingUp) ? divisionWarmup.phase : null,
-            divisionProgressAtEnd: (operation === 'division' && wasWarmingUp) ? divisionWarmup.progress : null,
-        });
+    }, [score, gameState, incrementStreak, isTrollMode, operation, divisionWarmup, trollProgress, handleGameEnd, activeTrollStages]);
 
-    }, [gameState, operation, recordFailedChallenge, topicId, score, divisionWarmup, setOverrideStreak]);
 
     const checkAnswer = useCallback(() => {
         if (isTestMode || parseInt(userAnswer, 10) === problem.answer) {
             handleCorrectAnswer();
         } else {
-            handleIncorrectAnswer();
+            handleGameEnd(false, 'incorrect');
         }
         setUserAnswer('');
-    }, [userAnswer, problem.answer, handleCorrectAnswer, handleIncorrectAnswer, isTestMode]);
+    }, [userAnswer, problem.answer, handleCorrectAnswer, isTestMode, handleGameEnd]);
 
     useEffect(() => {
         if (userAnswer.length > 0 && userAnswer.length >= String(problem.answer).length) {
@@ -421,44 +466,35 @@ const ChallengePage: React.FC = () => {
     }, [userAnswer, problem.answer, checkAnswer]);
     
     useEffect(() => {
+        if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+        
         if (gameState === 'playing') {
-             lastAnswerTimestamp.current = Date.now();
-            timerIntervalRef.current = window.setInterval(() => {
-                setTimeLeft(prev => {
-                    if (prev <= 10) {
-                        if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-                        
-                        if (gameStateRef.current !== 'playing') {
+            let shouldStartTimer = true;
+            if(isTrollMode) {
+                const currentStageConfig = activeTrollStages[trollProgress.stage];
+                if (currentStageConfig.time === null) {
+                    shouldStartTimer = false;
+                }
+            }
+
+            if(shouldStartTimer) {
+                timerIntervalRef.current = window.setInterval(() => {
+                    setTimeLeft(prev => {
+                        if (prev <= 10) {
+                            if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+                            handleGameEnd(false, 'timeout');
                             return 0;
                         }
-                        
-                        const finalStreak = useProgressStore.getState().streak;
-                        if (topicId) {
-                           recordFailedChallenge(topicId, finalStreak);
-                        }
-                        setOverrideStreak(finalStreak);
-                        setGameState('end');
-                        setEndReason({
-                            type: 'timeout',
-                            scoreAtEnd: score,
-                            streakAtEnd: finalStreak,
-                            wasWarmingUp: false,
-                            divisionPhaseAtEnd: null,
-                            divisionProgressAtEnd: null,
-                        });
-                        return 0;
-                    }
-                    return prev - 10;
-                });
-            }, 10);
-        } else {
-            if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+                        return prev - 10;
+                    });
+                }, 10);
+            }
         }
 
         return () => {
             if(timerIntervalRef.current) clearInterval(timerIntervalRef.current);
         }
-    }, [gameState, isTrollMode, recordFailedChallenge, topicId, operation, score, setOverrideStreak]);
+    }, [gameState, isTrollMode, trollProgress, handleGameEnd, activeTrollStages]);
 
 
     const startGame = (troll = false) => {
@@ -466,13 +502,24 @@ const ChallengePage: React.FC = () => {
         setOverrideStreak(null);
         setIsTrollMode(troll);
         setScore(0);
-        if (operation === 'division') {
-            setDivisionWarmup({ phase: 1, progress: 0 });
-            setProblem(generateProblem(operation, undefined, 1));
+
+        if (troll) {
+            setTrollProgress({ stage: 0, countInStage: 0 });
+            setGameState('playing');
+            // For troll mode, division problems should be the "hard" kind (phase 4)
+            setProblem(generateProblem(operation, undefined, operation === 'division' ? 4 : 1));
         } else {
-            setProblem(generateProblem(operation));
+            // Normal mode
+            if (operation === 'division') {
+                // Division starts with its special warmup phase 1
+                setDivisionWarmup({ phase: 1, progress: 0 });
+                setProblem(generateProblem(operation, undefined, 1));
+            } else {
+                // Other operations just start
+                setProblem(generateProblem(operation));
+            }
+            setGameState('warmup');
         }
-        setGameState('warmup');
     }
     
     useEffect(() => {
@@ -481,8 +528,6 @@ const ChallengePage: React.FC = () => {
         const style = document.createElement('style');
         style.id = styleId;
         style.innerHTML = `
-        @keyframes zoom-out-fade { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
-        .animate-\\[zoom-out-fade_0\\.6s_ease-out_forwards\\] { animation: zoom-out-fade 0.6s ease-out forwards; }
         @keyframes fall {
             to {
                 transform: translateY(100vh) rotate(720deg);
@@ -491,6 +536,70 @@ const ChallengePage: React.FC = () => {
         }`;
         document.head.appendChild(style);
     }, []);
+
+    const endScreenProgress = useMemo(() => {
+        if (!endReason) return { progressPercentage: 0, milestones: [] };
+    
+        if (endReason.trollWin) {
+            const totalTrollSteps = activeTrollStages.reduce((sum, stage) => sum + stage.count, 0);
+            let cumulativeSteps = 0;
+            const milestones = activeTrollStages.slice(0, -1).map(stage => {
+                cumulativeSteps += stage.count;
+                return (cumulativeSteps / totalTrollSteps) * 100;
+            });
+            return { progressPercentage: 100, milestones };
+        }
+    
+        if (endReason.trollStage !== undefined && endReason.trollCountInStage !== undefined) {
+            const totalTrollSteps = activeTrollStages.reduce((sum, stage) => sum + stage.count, 0);
+            let completedSteps = 0;
+            for (let i = 0; i < endReason.trollStage; i++) {
+                completedSteps += activeTrollStages[i].count;
+            }
+            completedSteps += endReason.trollCountInStage;
+            const progressPercentage = (completedSteps / totalTrollSteps) * 100;
+            
+            let cumulativeSteps = 0;
+            const milestones = activeTrollStages.slice(0, -1).map(stage => {
+                cumulativeSteps += stage.count;
+                return (cumulativeSteps / totalTrollSteps) * 100;
+            });
+            return { progressPercentage, milestones };
+        }
+    
+        if (operation === 'division') {
+            const milestonesCount = 4;
+            const segmentWidth = 100 / milestonesCount;
+            const milestones = [segmentWidth, segmentWidth * 2, segmentWidth * 3];
+            let progressPercentage = 0;
+            if (endReason.wasWarmingUp && endReason.divisionPhaseAtEnd && endReason.divisionProgressAtEnd !== null) {
+                const progressInPhase = endReason.divisionProgressAtEnd / 10;
+                progressPercentage = ((endReason.divisionPhaseAtEnd - 1) * segmentWidth) + (progressInPhase * segmentWidth);
+            } else {
+                 progressPercentage = (milestonesCount - 1) * segmentWidth;
+            }
+            return { progressPercentage, milestones };
+        }
+    
+        const warmupPercentage = 40;
+        const playingPercentage = 60;
+        const milestones = [
+            warmupPercentage, 
+            ...standardDifficultyLevels
+                .filter(l => l.scoreThreshold > 0)
+                .map(l => warmupPercentage + (l.scoreThreshold / WINNING_SCORE) * playingPercentage)
+        ];
+        let progressPercentage = 0;
+        if (endReason.wasWarmingUp) {
+            const progressInWarmup = endReason.scoreAtEnd / WARMUP_COUNT;
+            progressPercentage = progressInWarmup * warmupPercentage;
+        } else {
+            const progressInChallenge = Math.min(endReason.scoreAtEnd / WINNING_SCORE, 1);
+            progressPercentage = warmupPercentage + (progressInChallenge * playingPercentage);
+        }
+        return { progressPercentage, milestones };
+    
+    }, [endReason, operation, activeTrollStages]);
 
     if (gameState === 'start' || gameState === 'end') {
         const hasCompletedBefore = topicId && topicStats[topicId] && topicStats[topicId].completions > 0;
@@ -507,7 +616,7 @@ const ChallengePage: React.FC = () => {
 
         return (
              <>
-                {gameState === 'end' && endReason?.type === 'win' && <Confetti />}
+                {(gameState === 'end' && (endReason?.type === 'win' || endReason?.trollWin)) && <Confetti />}
                  <div className="max-w-2xl mx-auto p-4 flex-grow flex flex-col justify-center">
                      <div className="bg-white dark:bg-dark-surface p-6 md:p-8 rounded-3xl shadow-2xl text-center relative">
                         {gameState === 'start' ? (
@@ -516,33 +625,45 @@ const ChallengePage: React.FC = () => {
                                 <p className="text-lg mb-4">{description}</p>
                                 <div className="flex flex-col items-center gap-4">
                                     <Button onClick={() => startGame(false)} className="w-full md:w-1/2">Comenzar Desafío</Button>
-                                    {hasCompletedBefore && operation !== 'division' && (
-                                        <>
-                                            <Button onClick={() => startGame(true)} variant='secondary' className="w-full md:w-1/2 animate-pulse">😈 MODO TROLL 😈</Button>
-                                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Modo Troll: ¡Intentá responder en menos de 500ms!</p>
-                                        </>
+                                    {hasCompletedBefore && (
+                                        <Button onClick={() => startGame(true)} variant='secondary' className="w-full md:w-1/2 animate-pulse">😈 MODO TROLL 😈</Button>
                                     )}
                                 </div>
                             </>
-                        ) : ( // gameState === 'end'
+                        ) : ( 
                              <>
-                                {endReason?.type === 'win' ? (
+                                {endReason?.trollWin ? (
+                                    <>
+                                        <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 mb-4 animate-pulse">¡MAESTRO TROLL!</h1>
+                                        <p className="text-xl">¡Superaste el desafío más difícil!</p>
+                                        <div className="my-6 text-8xl relative flex items-center justify-center">
+                                            <span className="animate-rainbow-pulse inline-block">🌈</span>
+                                            <span className="absolute text-5xl">💎</span>
+                                        </div>
+                                    </>
+                                ) : endReason?.type === 'win' ? (
                                     <>
                                         <h1 className="text-5xl font-extrabold text-green-500 mb-4">¡DESAFÍO SUPERADO!</h1>
-                                        <ChallengeEndAnimation endReason={endReason!} operation={operation}/>
+                                        <ChallengeEndAnimation {...endScreenProgress} />
                                     </>
                                 ) : (
                                     <>
                                         <h1 className="text-5xl font-extrabold text-brand-primary dark:text-dark-primary mb-2">¡Casi lo lográs!</h1>
                                         <p className="text-lg text-gray-600 dark:text-gray-400">¡No te rindas! Mirá hasta dónde llegaste:</p>
                                         
-                                        {endReason && <ChallengeEndAnimation endReason={endReason} operation={operation}/>}
+                                        <ChallengeEndAnimation {...endScreenProgress} />
 
                                         <div className="text-base bg-gray-100 dark:bg-dark-subtle p-4 rounded-lg mt-6 text-left space-y-2">
                                             <p><strong>Resultado:</strong> {endReason?.type === 'timeout' ? '¡Se acabó el tiempo!' : 'Respuesta incorrecta.'}</p>
                                             <p><strong>Puntaje Final:</strong> <span className="font-bold text-brand-secondary dark:text-dark-secondary"><AnimatedNumber value={endReason?.scoreAtEnd ?? 0} /></span></p>
                                             <p><strong>Racha Lograda:</strong> <span className="font-bold text-yellow-500"><AnimatedNumber value={endReason?.streakAtEnd ?? 0} /> 🔥</span></p>
-                                            {endReason?.wasWarmingUp ? (
+                                            
+                                            {endReason?.trollStage !== undefined && endReason.trollCountInStage !== undefined ? (
+                                                <>
+                                                    <p><strong>Etapa Alcanzada:</strong> <span className="font-bold">Modo Troll - {activeTrollStages[endReason.trollStage].name}</span></p>
+                                                    <p><strong>Progreso en Etapa:</strong> <span className="font-bold"><AnimatedNumber value={endReason.trollCountInStage} /> / {activeTrollStages[endReason.trollStage].count}</span></p>
+                                                </>
+                                            ) : endReason?.wasWarmingUp ? (
                                                 <p><strong>Etapa:</strong> Estabas en la fase de {' '}
                                                 {operation === 'division' && endReason.divisionPhaseAtEnd ? 
                                                     `calentamiento (${getDivisionPhaseDescription(endReason.divisionPhaseAtEnd)})` : 
@@ -551,7 +672,7 @@ const ChallengePage: React.FC = () => {
                                             ) : (
                                                 <>
                                                     <p><strong>Etapa:</strong> Prueba de velocidad.</p>
-                                                    {!isTrollMode && operation !== 'division' && endReason && endReason.scoreAtEnd < WINNING_SCORE && (
+                                                    {endReason && endReason.scoreAtEnd < WINNING_SCORE && (
                                                         <p><strong>Para ganar te faltaron:</strong> <span className="font-bold"><AnimatedNumber value={Math.max(0, WINNING_SCORE - (endReason?.scoreAtEnd ?? 0))} /></span> puntos.</p>
                                                     )}
                                                 </>
@@ -559,12 +680,9 @@ const ChallengePage: React.FC = () => {
                                         </div>
                                     </>
                                 )}
-                                {isTrollMode && fastestTime.current !== Infinity && (
-                                    <p className="text-2xl mt-4">Tu respuesta más rápida: <span className="font-bold text-brand-secondary dark:text-dark-secondary">{fastestTime.current}ms</span></p>
-                                )}
                                 <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
                                     <Button onClick={resetGame}>Jugar de nuevo</Button>
-                                    <Button onClick={() => navigate(`/grade/${gradeId}`)} variant="ghost">Elegir otro tema</Button>
+                                    <Button onClick={() => navigate(`/grade/${gradeId}`, { state: { awardedMedal: newlyAwardedMedal } })} variant="ghost">Elegir otro tema</Button>
                                 </div>
                              </>
                         )}
@@ -589,10 +707,17 @@ const ChallengePage: React.FC = () => {
         <div className={`w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8 ${sidebarPosition === 'left' ? 'md:flex-row-reverse' : ''}`}>
             <main className="flex-grow flex flex-col relative min-w-0">
                 <HelpButton operation={operation} gameMode="challenge" />
-                <div className={`bg-white dark:bg-dark-surface p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col relative transition-all duration-300 ${showTrollEffect ? 'scale-105 shadow-yellow-300/50' : ''} flex-grow`}>
-                     {showTrollEffect && <div className="absolute -inset-4 border-4 border-yellow-400 rounded-3xl animate-ping"></div>}
+                <div className={`bg-white dark:bg-dark-surface p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col relative transition-all duration-300 flex-grow`}>
                     
-                    {isWarmingUp && operation === 'division' && (
+                    {isTrollMode ? (
+                        <div className="text-center mb-2">
+                            <p className="font-bold text-purple-600 dark:text-purple-400">MODO TROLL - {activeTrollStages[trollProgress.stage].name}</p>
+                            <div className="w-full bg-gray-200 dark:bg-dark-subtle rounded-full h-2.5 mt-1">
+                                <div className="bg-purple-500 h-2.5 rounded-full" style={{width: `${(trollProgress.countInStage / activeTrollStages[trollProgress.stage].count) * 100}%`}}></div>
+                            </div>
+                            <p className="font-bold text-sm">{trollProgress.countInStage} / {activeTrollStages[trollProgress.stage].count}</p>
+                        </div>
+                    ) : isWarmingUp && operation === 'division' ? (
                         <div className="text-center mb-2">
                             <p className="font-bold text-brand-primary dark:text-dark-primary">FASE {divisionWarmup.phase}/3: {getDivisionPhaseDescription(divisionWarmup.phase)}</p>
                             <div className="w-full bg-gray-200 dark:bg-dark-subtle rounded-full h-2.5 mt-1">
@@ -600,17 +725,13 @@ const ChallengePage: React.FC = () => {
                             </div>
                             <p className="font-bold text-sm">{divisionWarmup.progress} / 10</p>
                         </div>
-                    )}
-                    
-                    {isWarmingUp && operation !== 'division' && (
+                    ) : isWarmingUp ? (
                         <p className="font-bold text-brand-primary dark:text-dark-primary mb-2">CALENTAMIENTO: {score} / {WARMUP_COUNT}</p>
+                    ) : (
+                        <p className="font-bold text-brand-secondary dark:text-dark-secondary mb-2">PUNTAJE: {score} / {WINNING_SCORE}</p>
                     )}
 
-                    {!isWarmingUp && (
-                        <p className="font-bold text-brand-secondary dark:text-dark-secondary mb-2">PUNTAJE: {score} {!isTrollMode && operation !== 'division' && `/ ${WINNING_SCORE}`}</p>
-                    )}
-
-                    {gameState === 'playing' && (
+                    {(gameState === 'playing' && (!isTrollMode || activeTrollStages[trollProgress.stage].time !== null)) && (
                         <div className="w-full bg-gray-200 dark:bg-dark-subtle rounded-full h-4 mb-4 overflow-hidden">
                             <div 
                                 className={`bg-gradient-to-r from-green-400 to-blue-500 h-4 rounded-full ease-linear`} 
@@ -621,7 +742,6 @@ const ChallengePage: React.FC = () => {
 
                     <div className="flex-grow flex items-center justify-center">
                         <div className="my-6 min-h-[100px] relative flex items-center justify-center">
-                             {showTrollEffect && <div className="absolute text-6xl font-black text-yellow-400 opacity-0 animate-[zoom-out-fade_0.6s_ease-out_forwards]">¡TROLL!</div>}
                             <span className="text-6xl sm:text-7xl font-extrabold tracking-wider">{problem.a} {operator} {problem.b}</span>
                         </div>
                     </div>

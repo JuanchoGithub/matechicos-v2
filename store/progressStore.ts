@@ -5,6 +5,13 @@ export interface TopicStats {
   completions: number;
   longestStreak: number;
   bestTime?: number; // For timed challenges, in milliseconds
+  medals?: {
+    bronze?: boolean;
+    silver?: boolean;
+    gold?: boolean;
+    platinum?: boolean;
+    rainbow?: boolean;
+  };
 }
 
 export interface TopicProgress {
@@ -21,7 +28,7 @@ interface ProgressState {
   incrementStreak: () => void;
   resetStreak: () => void;
   recordCompletion: (topicId: string, exerciseIdsToClear: string[], currentStreak: number, time?: number) => void;
-  recordFailedChallenge: (topicId: string, streak: number) => void;
+  updateChallengeStats: (topicId: string, streak: number, score: number, isTrollMode: boolean, trollStageReached: number, didWin: boolean) => void;
   recordCorrectAnswerForTopic: (topicId: string, stageThreshold: number) => void;
   getTopicProgress: (topicId: string) => TopicProgress;
 }
@@ -29,6 +36,7 @@ interface ProgressState {
 const initialTopicStats: TopicStats = {
   completions: 0,
   longestStreak: 0,
+  medals: {},
 };
 
 const initialTopicProgress: TopicProgress = {
@@ -76,14 +84,31 @@ export const useProgressStore = create<ProgressState>()(
         }));
       },
       
-      recordFailedChallenge: (topicId, streak) => {
+      updateChallengeStats: (topicId, streak, score, isTrollMode, trollStageReached, didWin) => {
         set((state) => {
           const currentStats = state.topicStats[topicId] || { ...initialTopicStats };
+          const newMedals = { ...(currentStats.medals || {}) };
+      
+          if (isTrollMode) {
+            if (trollStageReached >= 2) { // Reached Nivel 2 (1s)
+              newMedals.platinum = true;
+            }
+            if (didWin) { // Completed Troll Mode
+              newMedals.rainbow = true;
+            }
+          } else {
+            if (score >= 40) newMedals.bronze = true;
+            if (score >= 60) newMedals.silver = true;
+            if (didWin) newMedals.gold = true;
+          }
+          
           const newStats: TopicStats = {
             ...currentStats,
-            // Always store the highest streak achieved
+            completions: didWin ? currentStats.completions + 1 : currentStats.completions,
             longestStreak: Math.max(currentStats.longestStreak, streak),
+            medals: newMedals,
           };
+      
           return {
             topicStats: {
               ...state.topicStats,
@@ -97,9 +122,9 @@ export const useProgressStore = create<ProgressState>()(
         const currentStats = get().topicStats[topicId] || { ...initialTopicStats };
         const newStats: TopicStats = {
           completions: currentStats.completions + 1,
-          // Update the longest streak on completion as well, if it's a new record
           longestStreak: Math.max(currentStats.longestStreak, currentStreak),
           bestTime: currentStats.bestTime,
+          medals: currentStats.medals, // Preserve medals
         };
 
         if (time !== undefined) {

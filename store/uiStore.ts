@@ -2,6 +2,15 @@ import React from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+export interface MedalAnimationState {
+  topicId: string;
+  medal: 'bronze' | 'silver' | 'gold' | 'platinum' | 'rainbow';
+  elementRect: DOMRect;
+  topicName: string;
+  topicIcon: string;
+}
+
+
 interface UiState {
   statusBarContent: React.ReactNode | null;
   setStatusBarContent: (content: React.ReactNode | null) => void;
@@ -17,6 +26,9 @@ interface UiState {
   toggleTheme: () => void;
   overrideStreak: number | null;
   setOverrideStreak: (streak: number | null) => void;
+  medalAnimationState: MedalAnimationState | null;
+  startMedalAnimation: (state: MedalAnimationState) => void;
+  endMedalAnimation: () => void;
 }
 
 export const useUiStore = create<UiState>()(
@@ -42,6 +54,9 @@ export const useUiStore = create<UiState>()(
         })),
       overrideStreak: null,
       setOverrideStreak: (streak) => set({ overrideStreak: streak }),
+      medalAnimationState: null,
+      startMedalAnimation: (state) => set({ medalAnimationState: state }),
+      endMedalAnimation: () => set({ medalAnimationState: null }),
     }),
     {
       name: 'mathkids-ui-storage',

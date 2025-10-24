@@ -8,6 +8,7 @@ import TutorialPage from './pages/TutorialPage';
 import Header from './components/Header';
 import StatusBar from './components/StatusBar';
 import { useUiStore } from './store/uiStore';
+import MedalAnimationOverlay from './components/MedalAnimationOverlay';
 
 // We need a wrapper component to use react-router hooks
 const AppContent: React.FC = () => {
@@ -78,6 +79,7 @@ const AppContent: React.FC = () => {
           {toastMessage}
         </div>
       )}
+      <MedalAnimationOverlay />
     </div>
   );
 };
