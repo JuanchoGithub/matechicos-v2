@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useUiStore } from '../store/uiStore';
 import Card from './Card';
@@ -38,51 +39,71 @@ const MedalAnimationOverlay: React.FC = () => {
     }
   };
 
+  const handleMedalAnimationEnd = () => {
+    if (step === 'flying') {
+      setStep('impacting');
+    }
+  };
+
   const handleFadeEnd = () => {
     endMedalAnimation();
     setStep('idle');
   };
+  
+  const cardBeforeImpact = (
+    <Card className="flex flex-col items-center justify-center w-full h-full">
+      <div className="text-8xl">{topicIcon}</div>
+      <h3 className="text-3xl font-bold text-brand-text dark:text-dark-text">{topicName}</h3>
+    </Card>
+  );
 
-  const cardStyle: React.CSSProperties = step === 'centering'
-    ? {
-        position: 'absolute',
-        top: `${elementRect.top}px`,
-        left: `${elementRect.left}px`,
-        width: `${elementRect.width}px`,
-        height: `${elementRect.height}px`,
-      }
-    : {};
+  const cardAfterImpact = (
+    <Card className="flex flex-col items-center justify-center w-full h-full" medalTier={medal}>
+      <div className="text-8xl">{topicIcon}</div>
+      <h3 className="text-3xl font-bold">{topicName}</h3>
+    </Card>
+  );
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center">
+      
       {/* 1. The Card that animates to center */}
-      <div
-        style={cardStyle}
-        className={step === 'centering' ? 'absolute' : 'relative'}
-      >
-        <div className={step !== 'centering' ? 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2' : ''}>
-          <div
-             className={
-                step === 'idle' ? 'opacity-0' :
-                step === 'centering' ? 'animate-card-center' :
-                step === 'impacting' ? 'animate-impact-shake' : 'scale-[1.2]'
-             }
-             style={step === 'centering' ? { width: `${elementRect.width}px`, height: `${elementRect.height}px` } : {}}
-             onAnimationEnd={handleCardAnimationEnd}
+      {step === 'centering' && (
+        <div
+          style={{
+            position: 'absolute',
+            top: `${elementRect.top}px`,
+            left: `${elementRect.left}px`,
+            width: `${elementRect.width}px`,
+            height: `${elementRect.height}px`,
+          }}
+          className="animate-card-center"
+          onAnimationEnd={handleCardAnimationEnd}
+        >
+          {cardBeforeImpact}
+        </div>
+      )}
+
+      {/* The centered, stationary card */}
+      {(step === 'flying' || step === 'impacting') && (
+        <div
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-[1.2]"
+          style={{ width: `${elementRect.width}px`, height: `${elementRect.height}px` }}
+        >
+          <div 
+            className={step === 'impacting' ? 'animate-impact-shake' : ''}
+            onAnimationEnd={handleCardAnimationEnd}
           >
-            <Card className="flex flex-col items-center justify-center w-full h-full">
-                <div className="text-8xl">{topicIcon}</div>
-                <h3 className="text-3xl font-bold text-brand-text dark:text-dark-text">{topicName}</h3>
-            </Card>
+             {step === 'impacting' ? cardAfterImpact : cardBeforeImpact}
           </div>
         </div>
-      </div>
+      )}
 
       {/* 2. The Medal that flies in */}
       {step === 'flying' && (
         <div
           className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10rem] z-10 animate-medal-fly-in"
-          onAnimationEnd={() => setStep('impacting')}
+          onAnimationEnd={handleMedalAnimationEnd}
         >
           <MedalIcon medal={medal} />
         </div>
