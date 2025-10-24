@@ -11,8 +11,9 @@ const StatusBar: React.FC = () => {
 
   return (
     <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm shadow-[0_-2px_10px_rgba(0,0,0,0.1)] z-20">
-      <div className="container mx-auto px-4 h-16 relative flex justify-between items-center">
-        <div className="absolute left-4 top-1/2 -translate-y-1/2">
+      <div className="px-2 h-16 relative flex justify-between items-center">
+        {/* Left element */}
+        <div className="z-10">
           {isTestMode && (
             <div className="flex items-center space-x-2 bg-yellow-400/80 backdrop-blur-sm rounded-full px-3 py-1 shadow-sm">
               <span className="text-sm font-bold text-yellow-900">MODO PRUEBA</span>
@@ -20,9 +21,17 @@ const StatusBar: React.FC = () => {
           )}
         </div>
         
-        <div className="flex-grow flex justify-center">{statusBarContent}</div>
+        {/* Center element */}
+        {statusBarContent && (
+           <div className="absolute inset-0 flex items-center justify-center text-center pointer-events-none z-0">
+             <div className="pointer-events-auto">
+               {statusBarContent}
+             </div>
+           </div>
+        )}
         
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-2 bg-white/50 dark:bg-dark-surface/50 backdrop-blur-sm rounded-full px-4 py-1.5 shadow-sm">
+        {/* Right element */}
+        <div className="z-10 flex items-center space-x-2 bg-white/50 dark:bg-dark-surface/50 backdrop-blur-sm rounded-full px-4 py-1.5 shadow-sm">
           <StarIcon className="w-6 h-6 text-yellow-400" />
           <span className="text-lg font-bold text-brand-text dark:text-dark-text">{displayStreak}</span>
           <span className="text-brand-text dark:text-dark-text hidden sm:inline">Racha</span>

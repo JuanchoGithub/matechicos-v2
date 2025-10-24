@@ -20,7 +20,7 @@ const Header: React.FC = () => {
 
   return (
     <header className="bg-brand-primary dark:bg-dark-surface shadow-md sticky top-0 z-10">
-      <div className="container mx-auto px-4 md:px-8 h-16 relative flex items-center justify-between">
+      <div className="px-2 h-16 relative flex items-center justify-between">
         {/* Left element */}
         <div className="z-20">
           {showHistoryBackButton ? (
