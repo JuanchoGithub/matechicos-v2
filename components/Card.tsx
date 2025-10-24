@@ -12,7 +12,7 @@ const Card: React.FC<CardProps> = ({ children, onClick, className }) => {
   return (
     <div
       onClick={onClick}
-      className={`bg-white rounded-2xl shadow-lg p-6 text-center ${clickableClasses} ${className}`}
+      className={`bg-white dark:bg-dark-surface rounded-2xl shadow-lg dark:shadow-xl dark:shadow-black/20 p-6 text-center ${clickableClasses} ${className}`}
     >
       {children}
     </div>

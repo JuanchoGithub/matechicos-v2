@@ -11,7 +11,7 @@ const Button: React.FC<ButtonProps> = ({ children, className, variant = 'primary
   const variantClasses = {
     primary: 'bg-brand-primary text-white focus:ring-blue-300',
     secondary: 'bg-brand-secondary text-brand-text focus:ring-green-200',
-    ghost: 'bg-transparent text-brand-primary hover:bg-blue-100',
+    ghost: 'bg-transparent text-brand-primary hover:bg-blue-100 dark:text-dark-primary dark:hover:bg-dark-primary/20',
   };
 
   return (

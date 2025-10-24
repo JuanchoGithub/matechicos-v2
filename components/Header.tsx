@@ -3,6 +3,7 @@ import { Link, useMatch } from 'react-router-dom';
 import { useUiStore } from '../store/uiStore';
 import { APP_TITLE } from '../constants';
 import { ArrowLeftIcon } from './icons';
+import ThemeToggleButton from './ThemeToggleButton';
 
 const Header: React.FC = () => {
   const headerContent = useUiStore((state) => state.headerContent);
@@ -16,8 +17,8 @@ const Header: React.FC = () => {
   const showBackButton = !!gradeId;
 
   return (
-    <header className="bg-brand-primary shadow-md sticky top-0 z-10">
-      <div className="container mx-auto px-4 md:px-8 h-16 relative flex items-center">
+    <header className="bg-brand-primary dark:bg-dark-surface shadow-md sticky top-0 z-10">
+      <div className="container mx-auto px-4 md:px-8 h-16 relative flex items-center justify-between">
         {/* Left element */}
         <div className="z-20">
           {showBackButton && gradeId ? (
@@ -46,6 +47,11 @@ const Header: React.FC = () => {
             {headerContent}
           </div>
         )}
+
+        {/* Right element */}
+        <div className="z-20">
+          <ThemeToggleButton />
+        </div>
       </div>
     </header>
   );

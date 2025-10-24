@@ -1,5 +1,6 @@
 import React from 'react';
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 interface UiState {
   statusBarContent: React.ReactNode | null;
@@ -12,19 +13,38 @@ interface UiState {
   toggleTestMode: () => void;
   sidebarPosition: 'left' | 'right';
   toggleSidebarPosition: () => void;
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
 }
 
-export const useUiStore = create<UiState>((set) => ({
-  statusBarContent: null,
-  setStatusBarContent: (content) => set({ statusBarContent: content }),
-  clearStatusBarContent: () => set({ statusBarContent: null }),
-  headerContent: null,
-  setHeaderContent: (content) => set({ headerContent: content }),
-  clearHeaderContent: () => set({ headerContent: null }),
-  isTestMode: false,
-  toggleTestMode: () => set((state) => ({ isTestMode: !state.isTestMode })),
-  sidebarPosition: 'right', // Default to right side
-  toggleSidebarPosition: () => set((state) => ({
-    sidebarPosition: state.sidebarPosition === 'right' ? 'left' : 'right',
-  })),
-}));
+export const useUiStore = create<UiState>()(
+  persist(
+    (set) => ({
+      statusBarContent: null,
+      setStatusBarContent: (content) => set({ statusBarContent: content }),
+      clearStatusBarContent: () => set({ statusBarContent: null }),
+      headerContent: null,
+      setHeaderContent: (content) => set({ headerContent: content }),
+      clearHeaderContent: () => set({ headerContent: null }),
+      isTestMode: false,
+      toggleTestMode: () => set((state) => ({ isTestMode: !state.isTestMode })),
+      sidebarPosition: 'right',
+      toggleSidebarPosition: () =>
+        set((state) => ({
+          sidebarPosition: state.sidebarPosition === 'right' ? 'left' : 'right',
+        })),
+      theme: window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+      toggleTheme: () =>
+        set((state) => ({
+          theme: state.theme === 'light' ? 'dark' : 'light',
+        })),
+    }),
+    {
+      name: 'mathkids-ui-storage',
+      partialize: (state) => ({
+        sidebarPosition: state.sidebarPosition,
+        theme: state.theme,
+      }),
+    }
+  )
+);

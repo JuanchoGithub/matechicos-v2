@@ -337,17 +337,17 @@ const ChallengePage: React.FC = () => {
 
         return (
              <div className="max-w-2xl mx-auto p-4 flex-grow flex flex-col justify-center">
-                 <div className="bg-white p-6 md:p-8 rounded-3xl shadow-2xl text-center">
+                 <div className="bg-white dark:bg-dark-surface p-6 md:p-8 rounded-3xl shadow-2xl text-center">
                     {gameState === 'start' ? (
                         <>
-                             <h1 className="text-4xl md:text-5xl font-extrabold text-brand-primary mb-4">{topic.name}</h1>
+                             <h1 className="text-4xl md:text-5xl font-extrabold text-brand-primary dark:text-dark-primary mb-4">{topic.name}</h1>
                             <p className="text-lg mb-4">{description}</p>
                             <div className="flex flex-col items-center gap-4">
                                 <Button onClick={() => startGame(false)} className="w-full md:w-1/2">Comenzar Desafío</Button>
                                 {hasCompletedBefore && operation !== 'division' && (
                                     <>
                                         <Button onClick={() => startGame(true)} variant='secondary' className="w-full md:w-1/2 animate-pulse">😈 MODO TROLL 😈</Button>
-                                        <p className="text-sm text-gray-600 mt-2">Modo Troll: ¡Intentá responder en menos de 500ms!</p>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Modo Troll: ¡Intentá responder en menos de 500ms!</p>
                                     </>
                                 )}
                             </div>
@@ -357,11 +357,11 @@ const ChallengePage: React.FC = () => {
                             {!isTrollMode && score >= WINNING_SCORE && operation !== 'division' ? (
                                 <h1 className="text-5xl font-extrabold text-green-500 mb-4">¡DESAFÍO SUPERADO!</h1>
                             ) : (
-                                <h1 className="text-5xl font-extrabold text-brand-primary mb-4">¡Juego Terminado!</h1>
+                                <h1 className="text-5xl font-extrabold text-brand-primary dark:text-dark-primary mb-4">¡Juego Terminado!</h1>
                             )}
                             <p className="text-3xl mb-4">Tu puntaje: <span className="font-bold">{score}</span></p>
                             {isTrollMode && fastestTime.current !== Infinity && (
-                                <p className="text-2xl mb-4">Tu respuesta más rápida: <span className="font-bold text-brand-secondary">{fastestTime.current}ms</span></p>
+                                <p className="text-2xl mb-4">Tu respuesta más rápida: <span className="font-bold text-brand-secondary dark:text-dark-secondary">{fastestTime.current}ms</span></p>
                             )}
                             <div className="flex flex-col sm:flex-row gap-4 justify-center">
                                 <Button onClick={resetGame}>Jugar de nuevo</Button>
@@ -389,13 +389,13 @@ const ChallengePage: React.FC = () => {
         <div className={`w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8 ${sidebarPosition === 'left' ? 'md:flex-row-reverse' : ''}`}>
             <main className="flex-grow flex flex-col relative min-w-0">
                 <HelpButton operation={operation} gameMode="challenge" />
-                <div className={`bg-white p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col relative transition-all duration-300 ${showTrollEffect ? 'scale-105 shadow-yellow-300/50' : ''} flex-grow`}>
+                <div className={`bg-white dark:bg-dark-surface p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col relative transition-all duration-300 ${showTrollEffect ? 'scale-105 shadow-yellow-300/50' : ''} flex-grow`}>
                      {showTrollEffect && <div className="absolute -inset-4 border-4 border-yellow-400 rounded-3xl animate-ping"></div>}
                     
                     {isWarmingUp && operation === 'division' && (
                         <div className="text-center mb-2">
-                            <p className="font-bold text-brand-primary">FASE {divisionWarmup.phase}/3: {getDivisionPhaseDescription(divisionWarmup.phase)}</p>
-                            <div className="w-full bg-gray-200 rounded-full h-2.5 mt-1">
+                            <p className="font-bold text-brand-primary dark:text-dark-primary">FASE {divisionWarmup.phase}/3: {getDivisionPhaseDescription(divisionWarmup.phase)}</p>
+                            <div className="w-full bg-gray-200 dark:bg-dark-subtle rounded-full h-2.5 mt-1">
                                 <div className="bg-brand-secondary h-2.5 rounded-full" style={{width: `${divisionWarmup.progress * 10}%`}}></div>
                             </div>
                             <p className="font-bold text-sm">{divisionWarmup.progress} / 10</p>
@@ -403,15 +403,15 @@ const ChallengePage: React.FC = () => {
                     )}
                     
                     {isWarmingUp && operation !== 'division' && (
-                        <p className="font-bold text-brand-primary mb-2">CALENTAMIENTO: {score} / {WARMUP_COUNT}</p>
+                        <p className="font-bold text-brand-primary dark:text-dark-primary mb-2">CALENTAMIENTO: {score} / {WARMUP_COUNT}</p>
                     )}
 
                     {!isWarmingUp && (
-                        <p className="font-bold text-brand-secondary mb-2">PUNTAJE: {score} {!isTrollMode && operation !== 'division' && `/ ${WINNING_SCORE}`}</p>
+                        <p className="font-bold text-brand-secondary dark:text-dark-secondary mb-2">PUNTAJE: {score} {!isTrollMode && operation !== 'division' && `/ ${WINNING_SCORE}`}</p>
                     )}
 
                     {gameState === 'playing' && (
-                        <div className="w-full bg-gray-200 rounded-full h-4 mb-4 overflow-hidden">
+                        <div className="w-full bg-gray-200 dark:bg-dark-subtle rounded-full h-4 mb-4 overflow-hidden">
                             <div 
                                 className={`bg-gradient-to-r from-green-400 to-blue-500 h-4 rounded-full ease-linear ${isTimeResetting ? 'transition-none' : 'transition-width duration-100'}`} 
                                 style={{ width: `${(timeLeft / maxTime) * 100}%` }}
@@ -429,13 +429,13 @@ const ChallengePage: React.FC = () => {
             </main>
 
             <aside className="w-full md:max-w-sm flex-shrink-0">
-                <div className="relative bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col justify-center h-full">
+                <div className="relative bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col justify-center h-full">
                     <SidebarToggleButton />
                     <input
                         type="text"
                         readOnly
                         value={userAnswer}
-                        className="text-4xl sm:text-5xl text-center font-bold w-full mb-4 p-4 bg-gray-100 border-2 border-gray-200 rounded-2xl"
+                        className="text-4xl sm:text-5xl text-center font-bold w-full mb-4 p-4 bg-gray-100 dark:bg-dark-subtle dark:border-2 dark:border-slate-600 rounded-2xl"
                         placeholder="?"
                     />
                     <NumberPad 

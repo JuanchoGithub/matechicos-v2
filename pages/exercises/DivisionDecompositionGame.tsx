@@ -32,8 +32,8 @@ interface DivisionDecompositionGameProps {
     gradeId: string;
 }
 
-const highlightColor1 = 'bg-sky-200';
-const highlightColor2 = 'bg-lime-200';
+const highlightColor1 = 'bg-sky-200 dark:bg-sky-800';
+const highlightColor2 = 'bg-lime-200 dark:bg-lime-800';
 
 const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ topic, gradeId }) => {
     const navigate = useNavigate();
@@ -353,7 +353,7 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
         if (step !== 0 && step !== 3) return null;
 
         return (
-            <div className="p-3 bg-yellow-100 border-2 border-yellow-300 rounded-lg text-yellow-800 font-sans h-full animate-fade-in">
+            <div className="p-3 bg-yellow-100 dark:bg-yellow-900/50 border-2 border-yellow-300 dark:border-yellow-700 rounded-lg text-yellow-800 dark:text-yellow-200 font-sans h-full animate-fade-in">
                 <p className="font-bold mb-2 text-center text-base">💡 Tabla del {divisor}</p>
                 <div className="flex flex-col items-center space-y-1 text-sm sm:text-base">
                     {Array.from({ length: 9 }, (_, i) => {
@@ -379,11 +379,11 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
         <div className={`w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8 ${sidebarPosition === 'left' ? 'md:flex-row-reverse' : ''}`}>
             <main className="flex-grow flex flex-col relative">
                 <HelpButton operation="division" gameMode="division-decomposition" />
-                <div className="bg-white p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
+                <div className="bg-white dark:bg-dark-surface p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
                     
                     {/* Interactive prompt */}
-                    <div className="font-sans text-lg md:text-xl p-4 bg-gray-50 rounded-lg w-full max-w-3xl mx-auto">
-                        <div className="text-center text-base sm:text-lg md:text-xl lg:text-2xl font-semibold text-gray-700 mb-3 h-16 flex items-center justify-center">
+                    <div className="font-sans text-lg md:text-xl p-4 bg-gray-50 dark:bg-dark-subtle/50 rounded-lg w-full max-w-3xl mx-auto">
+                        <div className="text-center text-base sm:text-lg md:text-xl lg:text-2xl font-semibold text-gray-700 dark:text-gray-300 mb-3 h-16 flex items-center justify-center">
                             {getPrompt()}
                         </div>
                         {step === 6 ? (
@@ -392,7 +392,7 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
                                     <div 
                                         key={index} 
                                         onClick={() => setActiveFinalDigitIndex(index)}
-                                        className={`w-14 h-14 text-3xl flex items-center justify-center font-bold border-4 rounded-lg cursor-pointer transition-all ${activeFinalDigitIndex === index ? 'border-brand-primary scale-105' : 'border-gray-300'}`}
+                                        className={`w-14 h-14 text-3xl flex items-center justify-center font-bold border-4 rounded-lg cursor-pointer transition-all ${activeFinalDigitIndex === index ? 'border-brand-primary dark:border-dark-primary scale-105' : 'border-gray-300 dark:border-dark-subtle'}`}
                                     >
                                         {digit}
                                     </div>
@@ -404,7 +404,7 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
                                 readOnly
                                 value={userInput}
                                 placeholder="?"
-                                className="w-28 mx-auto text-center font-bold p-2 rounded-lg border-2 border-brand-primary bg-gray-100 text-3xl"
+                                className="w-28 mx-auto text-center font-bold p-2 rounded-lg border-2 border-brand-primary dark:border-dark-primary bg-gray-100 dark:bg-dark-subtle text-3xl"
                             />
                         )}
                     </div>
@@ -428,8 +428,8 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
                                     </div>
                                     
                                     {/* Division Symbol */}
-                                    <div className="absolute top-14 right-36 h-10 border-l-4 border-black"></div>
-                                    <div className="absolute top-12 right-16 w-20 border-b-4 border-black"></div>
+                                    <div className="absolute top-14 right-36 h-10 border-l-4 border-black dark:border-dark-text"></div>
+                                    <div className="absolute top-12 right-16 w-20 border-b-4 border-black dark:border-dark-text"></div>
 
                                     {/* Dividend */}
                                     <div className="absolute top-14 right-16 w-20 text-right">
@@ -439,25 +439,25 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
                                     
                                     {/* Calculation Steps */}
                                     <div className={`absolute top-32 right-28 w-10 text-right transition-opacity ${step >= 1 ? 'opacity-100' : 'opacity-0'}`}>
-                                        <span className="text-gray-400 absolute left-[-1rem]">-</span>
+                                        <span className="text-gray-400 dark:text-gray-500 absolute left-[-1rem]">-</span>
                                         <span className={`inline-block px-1 rounded ${highlights['p1'] || ''}`}>{step === 1 ? userInput : product1}</span>
                                     </div>
 
-                                    <div className={`absolute top-44 right-28 w-10 border-b-4 border-black transition-opacity ${step >= 2 ? 'opacity-100' : 'opacity-0'}`}></div>
+                                    <div className={`absolute top-44 right-28 w-10 border-b-4 border-black dark:border-dark-text transition-opacity ${step >= 2 ? 'opacity-100' : 'opacity-0'}`}></div>
                                     
                                     <div className={`absolute top-[12.5rem] right-16 w-20 text-right transition-opacity ${step >= 2 ? 'opacity-100' : 'opacity-0'}`}>
                                         <Digit highlight={highlights['r1']}>{step === 2 ? userInput : remainder1}</Digit>
                                         <Digit highlight={highlights['d2-brought-down']}><span className={step < 3 ? 'invisible' : ''}>{dividendStr[1]}</span></Digit>
                                     </div>
                                     
-                                    <div className={`absolute top-[11rem] right-20 text-brand-secondary transition-opacity ${step === 2 && remainder1 !== null ? 'opacity-100' : 'opacity-0'}`}>↓</div>
+                                    <div className={`absolute top-[11rem] right-20 text-brand-secondary dark:text-dark-secondary transition-opacity ${step === 2 && remainder1 !== null ? 'opacity-100' : 'opacity-0'}`}>↓</div>
                                     
                                     <div className={`absolute top-[16rem] right-16 w-20 text-right transition-opacity ${step >= 4 ? 'opacity-100' : 'opacity-0'}`}>
-                                        <span className="text-gray-400 absolute left-[-1rem]">-</span>
+                                        <span className="text-gray-400 dark:text-gray-500 absolute left-[-1rem]">-</span>
                                         <span className={`inline-block px-1 rounded ${highlights['p2'] || ''}`}>{step === 4 ? userInput : product2}</span>
                                     </div>
 
-                                    <div className={`absolute top-[18.5rem] right-16 w-20 border-b-4 border-black transition-opacity ${step >= 5 ? 'opacity-100' : 'opacity-0'}`}></div>
+                                    <div className={`absolute top-[18.5rem] right-16 w-20 border-b-4 border-black dark:border-dark-text transition-opacity ${step >= 5 ? 'opacity-100' : 'opacity-0'}`}></div>
 
                                     <div className={`absolute top-[19.5rem] right-16 w-20 text-right transition-opacity ${step >= 5 ? 'opacity-100' : 'opacity-0'}`}>
                                         <span className="inline-block px-1 rounded">
@@ -474,7 +474,7 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
                 </div>
             </main>
             <aside className="w-full md:max-w-sm flex-shrink-0">
-                <div className="relative bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col h-full">
+                <div className="relative bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col h-full">
                     <SidebarToggleButton />
                     <div className="flex-grow flex flex-col justify-center">
                         <NumberPad onNumberClick={handleNumberPadClick} onDeleteClick={handleDeleteClick} />

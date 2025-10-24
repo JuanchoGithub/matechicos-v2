@@ -292,13 +292,13 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
         });
 
         return (
-            <div className="bg-white p-4 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
-                <p className="text-2xl md:text-3xl font-bold text-brand-text mb-2">{epicEx.problemText}</p>
-                <div className="bg-gray-100 rounded-xl p-2 my-2">
+            <div className="bg-white dark:bg-dark-surface p-4 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
+                <p className="text-2xl md:text-3xl font-bold mb-2">{epicEx.problemText}</p>
+                <div className="bg-gray-100 dark:bg-dark-subtle rounded-xl p-2 my-2">
                     <p className="text-3xl md:text-4xl font-extrabold tracking-wider">{equation} = ?</p>
                 </div>
-                <div className="flex-grow flex flex-col items-center justify-center relative w-full h-full min-h-[150px] sm:min-h-[200px] mt-2 border-4 border-gray-200 rounded-xl">
-                    <span className="absolute top-1 left-2 text-gray-400 font-sans text-sm">Tu Pizarra</span>
+                <div className="flex-grow flex flex-col items-center justify-center relative w-full h-full min-h-[150px] sm:min-h-[200px] mt-2 border-4 border-gray-200 dark:border-dark-subtle rounded-xl">
+                    <span className="absolute top-1 left-2 text-gray-400 dark:text-gray-500 font-sans text-sm">Tu Pizarra</span>
                     <DrawingCanvas ref={drawingCanvasRef} mode={drawingMode}>
                         <div className="w-full h-full flex flex-col items-center justify-center p-4">
                         </div>
@@ -322,14 +322,14 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
 
             const parts = wpExercise.problemText.split(/(\d+)/g).filter(Boolean);
             return (
-                <p className="text-2xl md:text-3xl font-bold text-brand-text leading-relaxed">
+                <p className="text-2xl md:text-3xl font-bold leading-relaxed">
                     {parts.map((part, index) => {
                         if (/\d+/.test(part)) {
                             const num = parseInt(part, 10);
                             const isSelected = wordProblemState.selectedNumbers.some(sel => sel.index === index);
                             return (
                                 <span key={index} onClick={() => wordProblemState.step === 'numbers' && toggleNumberSelection(num, index)}
-                                    className={`p-1 rounded-lg transition-all duration-300 ${wordProblemState.step === 'numbers' ? 'cursor-pointer hover:bg-yellow-200' : ''} ${isSelected ? 'bg-brand-secondary text-white ring-2 ring-yellow-400' : 'bg-gray-100'}`}>
+                                    className={`p-1 rounded-lg transition-all duration-300 ${wordProblemState.step === 'numbers' ? 'cursor-pointer hover:bg-yellow-200 dark:hover:bg-yellow-500/50' : ''} ${isSelected ? 'bg-brand-secondary text-white ring-2 ring-yellow-400' : 'bg-gray-100 dark:bg-dark-subtle'}`}>
                                     {part}
                                 </span>
                             );
@@ -339,17 +339,16 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
                 </p>
             );
         }
-        return <p className="text-3xl md:text-4xl font-bold text-brand-text">{currentExercise?.question}</p>;
+        return <p className="text-3xl md:text-4xl font-bold">{currentExercise?.question}</p>;
     };
 
     const renderSidebarContent = () => {
         if (currentExercise?.type === ExerciseType.WordProblem) {
-            const wpExercise = currentExercise as WordProblemExercise;
             switch (wordProblemState.step) {
                 case 'numbers': return (
                     <div className="flex flex-col h-full"><h3 className="text-xl font-bold mb-2 text-center">1. Elegí los números</h3>
-                        <div className="flex-grow bg-gray-100 rounded-lg p-4 mb-4 text-center">
-                            <p className="text-gray-600 mb-2">Números elegidos:</p>
+                        <div className="flex-grow bg-gray-100 dark:bg-dark-subtle rounded-lg p-4 mb-4 text-center">
+                            <p className="text-gray-600 dark:text-gray-400 mb-2">Números elegidos:</p>
                             <div className="text-3xl font-bold h-12">{wordProblemState.selectedNumbers.map(sel => sel.value).join(', ')}</div>
                         </div>
                         <Button onClick={() => setWordProblemState(prev => ({ ...prev, step: 'operation' }))} disabled={wordProblemState.selectedNumbers.length < 2}>Siguiente</Button>
@@ -358,11 +357,11 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
                     const operations: { op: Operation, symbol: string }[] = [{ op: 'addition', symbol: '+' }, { op: 'subtraction', symbol: '-' }];
                     return (<div className="flex flex-col h-full"><h3 className="text-xl font-bold mb-4 text-center">2. ¿Qué operación es?</h3>
                         <div className="grid grid-cols-2 gap-4">
-                            {operations.map(({ op, symbol }) => (<button key={op} onClick={() => setWordProblemState(prev => ({ ...prev, selectedOperation: op, step: 'solve' }))} className="text-5xl font-bold p-4 rounded-xl bg-brand-primary/10 hover:bg-brand-secondary/50 text-brand-primary transition-colors aspect-square focus:outline-none focus:ring-4 focus:ring-brand-secondary">{symbol}</button>))}
+                            {operations.map(({ op, symbol }) => (<button key={op} onClick={() => setWordProblemState(prev => ({ ...prev, selectedOperation: op, step: 'solve' }))} className="text-5xl font-bold p-4 rounded-xl bg-brand-primary/10 dark:bg-dark-primary/20 hover:bg-brand-secondary/50 text-brand-primary dark:text-dark-primary transition-colors aspect-square focus:outline-none focus:ring-4 focus:ring-brand-secondary">{symbol}</button>))}
                         </div></div>);
                 case 'solve': return (
                     <div><h3 className="text-xl font-bold mb-4 text-center">3. Resolvé la cuenta</h3>
-                        <input type="text" readOnly value={userAnswer} className="text-4xl text-center font-bold w-full mb-4 p-4 bg-gray-100 border-2 border-gray-200 rounded-2xl focus:outline-none" placeholder="#" />
+                        <input type="text" readOnly value={userAnswer} className="text-4xl text-center font-bold w-full mb-4 p-4 bg-gray-100 dark:bg-dark-subtle border-2 border-gray-200 dark:border-dark-subtle rounded-2xl focus:outline-none" placeholder="#" />
                         <NumberPad onNumberClick={(num) => setUserAnswer(prev => (prev.length < 5 ? prev + num : prev))} onDeleteClick={() => setUserAnswer(prev => prev.slice(0, -1))} />
                     </div>);
             }
@@ -372,7 +371,7 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
              return (
                 <div>
                     <h3 className="text-xl font-bold mb-4 text-center">Escribí el resultado final</h3>
-                    <input type="text" readOnly value={userAnswer} className="text-4xl text-center font-bold w-full mb-4 p-4 bg-gray-100 border-2 border-gray-200 rounded-2xl focus:outline-none" placeholder="#" />
+                    <input type="text" readOnly value={userAnswer} className="text-4xl text-center font-bold w-full mb-4 p-4 bg-gray-100 dark:bg-dark-subtle border-2 border-gray-200 dark:border-dark-subtle rounded-2xl focus:outline-none" placeholder="#" />
                     <NumberPad onNumberClick={(num) => setUserAnswer(prev => (prev.length < 5 ? prev + num : prev))} onDeleteClick={() => setUserAnswer(prev => prev.slice(0, -1))} />
                 </div>
             );
@@ -382,12 +381,12 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
             case ExerciseType.MultipleChoice:
                 const mcq = currentExercise as MultipleChoiceExercise;
                 return (<div className="flex flex-col space-y-3">
-                        {mcq.options.map(option => (<Button key={option} variant="secondary" onClick={() => setUserAnswer(option)} className={`w-full justify-center text-left p-4 h-auto text-xl ${userAnswer === option ? 'ring-4 ring-yellow-400' : ''}`}>{option}</Button>))}
+                        {mcq.options.map(option => (<Button key={option} variant="secondary" onClick={() => setUserAnswer(option)} className={`w-full justify-center text-left p-4 h-auto text-xl ${userAnswer === option ? 'ring-4 ring-yellow-400 dark:ring-yellow-500' : ''}`}>{option}</Button>))}
                     </div>);
             case ExerciseType.NumberInput:
                 return (
                     <div>
-                        <input type="text" readOnly value={userAnswer} className="text-4xl text-center font-bold w-full mb-4 p-4 bg-gray-100 border-2 border-gray-200 rounded-2xl focus:outline-none" placeholder="#" />
+                        <input type="text" readOnly value={userAnswer} className="text-4xl text-center font-bold w-full mb-4 p-4 bg-gray-100 dark:bg-dark-subtle border-2 border-gray-200 dark:border-dark-subtle rounded-2xl focus:outline-none" placeholder="#" />
                         <NumberPad onNumberClick={(num) => setUserAnswer(prev => (prev.length < 5 ? prev + num : prev))} onDeleteClick={() => setUserAnswer(prev => prev.slice(0, -1))} />
                     </div>);
             default: return null;
@@ -395,8 +394,8 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
     }
     
     if (isLoading || !currentExercise) {
-        return (<div className="text-center p-10 bg-white rounded-2xl shadow-lg flex-grow flex items-center justify-center">
-            <div className="flex flex-col items-center gap-4"><div className="animate-spin rounded-full h-16 w-16 border-b-4 border-brand-primary"></div><h2 className="text-2xl font-bold">Cargando ejercicio...</h2></div>
+        return (<div className="text-center p-10 bg-white dark:bg-dark-surface rounded-2xl shadow-lg flex-grow flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4"><div className="animate-spin rounded-full h-16 w-16 border-b-4 border-brand-primary dark:border-dark-primary"></div><h2 className="text-2xl font-bold">Cargando ejercicio...</h2></div>
         </div>);
     }
     
@@ -408,11 +407,11 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
                 {operation && !isEpicProblem && <HelpButton operation={operation} gameMode={isProgressiveWordProblem ? 'word-problem' : undefined} />}
                 {isEpicProblem 
                     ? renderEpicProblemMain()
-                    : <div className="bg-white p-8 rounded-3xl shadow-2xl text-center flex flex-col items-center justify-center flex-grow">{renderMainContent()}</div>
+                    : <div className="bg-white dark:bg-dark-surface p-8 rounded-3xl shadow-2xl text-center flex flex-col items-center justify-center flex-grow">{renderMainContent()}</div>
                 }
             </main>
             <aside className="w-full md:max-w-sm flex-shrink-0">
-                <div className="relative bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col h-full">
+                <div className="relative bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col h-full">
                     <SidebarToggleButton />
                     <div className="flex-grow flex flex-col justify-center">{renderSidebarContent()}</div>
                     {showSubmitButton && <Button onClick={handleAnswerSubmit} disabled={!userAnswer} className="w-full mt-4">{SUBMIT_BUTTON}</Button>}

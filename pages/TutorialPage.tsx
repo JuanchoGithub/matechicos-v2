@@ -9,14 +9,14 @@ type Operation = 'addition' | 'subtraction' | 'multiplication' | 'division';
 const GameModeExplanation: React.FC<{ gameMode?: string, operation: Operation }> = ({ gameMode, operation }) => {
     const defaultContent = (
         <div>
-            <h2 className="text-xl font-bold text-brand-text mb-2">¿Cómo funciona este ejercicio?</h2>
+            <h2 className="text-xl font-bold mb-2">¿Cómo funciona este ejercicio?</h2>
             <p>Tu objetivo es simple: ¡resolvé correctamente todos los ejercicios del tema para completarlo! Cada respuesta correcta te acerca más a la victoria. ¡Mucha suerte!</p>
         </div>
     );
 
     if (!gameMode) {
         return (
-            <div className="bg-amber-100/50 p-4 rounded-2xl font-sans text-left space-y-2 mt-4">
+            <div className="bg-amber-100/50 dark:bg-amber-900/50 p-4 rounded-2xl font-sans text-left space-y-2 mt-4">
                 {defaultContent}
             </div>
         );
@@ -134,15 +134,15 @@ const GameModeExplanation: React.FC<{ gameMode?: string, operation: Operation }>
             break;
         default:
            return (
-                <div className="bg-amber-100/50 p-4 rounded-2xl font-sans text-left space-y-2 mt-4">
+                <div className="bg-amber-100/50 dark:bg-amber-900/50 p-4 rounded-2xl font-sans text-left space-y-2 mt-4">
                     {defaultContent}
                 </div>
            );
     }
 
     return (
-        <div className="bg-amber-100/50 p-4 rounded-2xl font-sans text-left space-y-2 mt-4">
-            <h2 className="text-xl font-bold text-brand-text">{title}</h2>
+        <div className="bg-amber-100/50 dark:bg-amber-900/50 p-4 rounded-2xl font-sans text-left space-y-2 mt-4">
+            <h2 className="text-xl font-bold">{title}</h2>
             {content}
         </div>
     );
@@ -152,13 +152,13 @@ const GameModeExplanation: React.FC<{ gameMode?: string, operation: Operation }>
 // New component for the detailed division tutorial
 const DivisionTutorialContent: React.FC = () => {
     return (
-        <div className="bg-white/60 p-4 rounded-2xl font-sans text-left space-y-4 max-w-3xl mx-auto overflow-x-auto mt-4">
-            <h2 className="text-xl font-bold text-brand-text">Ejemplo: Dividamos 78 caramelos entre 3 amigos (78 ÷ 3)</h2>
+        <div className="bg-white/60 dark:bg-dark-surface/60 p-4 rounded-2xl font-sans text-left space-y-4 max-w-3xl mx-auto overflow-x-auto mt-4">
+            <h2 className="text-xl font-bold">Ejemplo: Dividamos 78 caramelos entre 3 amigos (78 ÷ 3)</h2>
             
             <div>
                 <h3 className="font-bold text-lg">Paso 1: Mirar el primer número del dividendo (78)</h3>
                 <p>Es el 7. ¿Cuántas veces entra el 3 en el 7 sin pasarse? ¡Entra 2 veces! (porque 2 × 3 = 6). Escribe el 2 arriba del 7.</p>
-                <pre className="mt-2 p-2 bg-gray-100 rounded-lg text-lg font-mono leading-tight">
+                <pre className="mt-2 p-2 bg-gray-100 dark:bg-dark-subtle rounded-lg text-lg font-mono leading-tight">
 {`  2  
  --- 
 3|78`}
@@ -168,7 +168,7 @@ const DivisionTutorialContent: React.FC = () => {
             <div>
                 <h3 className="font-bold text-lg">Paso 2: Multiplicar y restar</h3>
                 <p>2 (del cociente) × 3 (divisor) = 6. Ponemos el 6 debajo del 7 y restamos: 7 - 6 = 1.</p>
-                <pre className="mt-2 p-2 bg-gray-100 rounded-lg text-lg font-mono leading-tight">
+                <pre className="mt-2 p-2 bg-gray-100 dark:bg-dark-subtle rounded-lg text-lg font-mono leading-tight">
 {`  2  
  --- 
 3|78 
@@ -181,7 +181,7 @@ const DivisionTutorialContent: React.FC = () => {
             <div>
                 <h3 className="font-bold text-lg">Paso 3: Bajar el siguiente número</h3>
                 <p>Bajamos el 8 (del 78) al lado del 1. Ahora tenemos 18.</p>
-                <pre className="mt-2 p-2 bg-gray-100 rounded-lg text-lg font-mono leading-tight">
+                <pre className="mt-2 p-2 bg-gray-100 dark:bg-dark-subtle rounded-lg text-lg font-mono leading-tight">
 {`  2  
  --- 
 3|78 
@@ -194,7 +194,7 @@ const DivisionTutorialContent: React.FC = () => {
             <div>
                 <h3 className="font-bold text-lg">Paso 4: Repetir con el nuevo número (18)</h3>
                 <p>¿Cuántas veces entra el 3 en el 18? ¡Entra 6 veces! (porque 6 × 3 = 18). Escribimos el 6 en el cociente, arriba del 8.</p>
-                <pre className="mt-2 p-2 bg-gray-100 rounded-lg text-lg font-mono leading-tight">
+                <pre className="mt-2 p-2 bg-gray-100 dark:bg-dark-subtle rounded-lg text-lg font-mono leading-tight">
 {`  26 
  ----
 3|78 
@@ -207,7 +207,7 @@ const DivisionTutorialContent: React.FC = () => {
             <div>
                 <h3 className="font-bold text-lg">Paso 5: Multiplicar y restar de nuevo</h3>
                 <p>6 (del cociente) × 3 (divisor) = 18. Restamos: 18 - 18 = 0.</p>
-                <pre className="mt-2 p-2 bg-gray-100 rounded-lg text-lg font-mono leading-tight">
+                <pre className="mt-2 p-2 bg-gray-100 dark:bg-dark-subtle rounded-lg text-lg font-mono leading-tight">
 {`  26 
  ----
 3|78 
@@ -456,14 +456,14 @@ const TutorialPage: React.FC = () => {
     const renderAdditionWizard = () => {
         const step = additionWizard.step;
         const colStyle = "flex flex-col items-center justify-center font-mono text-4xl sm:text-5xl md:text-6xl font-bold gap-2 p-1 sm:p-2 rounded-lg transition-all";
-        const unitsColStyle = `${colStyle} ${step === 1 ? 'bg-brand-secondary/30' : ''}`;
-        const tensColStyle = `${colStyle} ${step === 2 ? 'bg-brand-secondary/30' : ''}`;
+        const unitsColStyle = `${colStyle} ${step === 1 ? 'bg-brand-secondary/30 dark:bg-dark-secondary/30' : ''}`;
+        const tensColStyle = `${colStyle} ${step === 2 ? 'bg-brand-secondary/30 dark:bg-dark-secondary/30' : ''}`;
         
         return (
             <div className="grid grid-cols-2 gap-x-2 w-40 sm:w-48 text-right">
                 {/* Carry Row */}
                 <div className={`h-10 sm:h-12 flex items-center justify-center ${step > 1 && additionWizard.carry ? 'opacity-100' : 'opacity-0'}`}>
-                    <span className="w-8 h-8 sm:w-10 sm:h-10 bg-yellow-200 text-yellow-700 rounded-full flex items-center justify-center text-2xl sm:text-3xl font-bold animate-bounce">
+                    <span className="w-8 h-8 sm:w-10 sm:h-10 bg-yellow-200 dark:bg-yellow-500/50 text-yellow-700 dark:text-yellow-200 rounded-full flex items-center justify-center text-2xl sm:text-3xl font-bold animate-bounce">
                         {additionWizard.carry}
                     </span>
                 </div>
@@ -478,7 +478,7 @@ const TutorialPage: React.FC = () => {
                 <div className={unitsColStyle}>{b_units}</div>
     
                 {/* Divider */}
-                <div className="col-span-2 border-t-4 border-gray-700 my-2"></div>
+                <div className="col-span-2 border-t-4 border-gray-700 dark:border-gray-300 my-2"></div>
     
                 {/* Result */}
                 <div className={tensColStyle}>{step === 3 ? additionWizard.tensResult : '?'}</div>
@@ -499,9 +499,9 @@ const TutorialPage: React.FC = () => {
             }
             if (multiplicationRemediationStep === 2) { // Counting "Palitos"
                  const groups = Array(problem.b).fill(0).map((_, groupIndex) => (
-                    <div key={groupIndex} className="flex flex-wrap justify-center items-center gap-1 border-2 border-brand-secondary/50 rounded-lg p-1 m-1">
+                    <div key={groupIndex} className="flex flex-wrap justify-center items-center gap-1 border-2 border-brand-secondary/50 dark:border-dark-secondary/50 rounded-lg p-1 m-1">
                         {Array(problem.a).fill(0).map((_, stickIndex) => (
-                            <span key={stickIndex} className="text-xl md:text-2xl text-brand-primary font-bold select-none">|</span>
+                            <span key={stickIndex} className="text-xl md:text-2xl text-brand-primary dark:text-dark-primary font-bold select-none">|</span>
                         ))}
                     </div>
                 ));
@@ -513,9 +513,9 @@ const TutorialPage: React.FC = () => {
             return (
                 <div className="my-4 text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight p-2 flex items-center justify-center">
                     <span>{problem.b}</span>
-                    <span className="mx-2 sm:mx-4 text-gray-400">×</span>
-                    <span className="w-16 h-16 sm:w-20 sm:h-20 border-4 border-dashed border-brand-primary rounded-2xl flex items-center justify-center text-brand-primary">?</span>
-                    <span className="mx-2 sm:mx-4 text-gray-400">=</span>
+                    <span className="mx-2 sm:mx-4 text-gray-400 dark:text-gray-500">×</span>
+                    <span className="w-16 h-16 sm:w-20 sm:h-20 border-4 border-dashed border-brand-primary dark:border-dark-primary rounded-2xl flex items-center justify-center text-brand-primary dark:text-dark-primary">?</span>
+                    <span className="mx-2 sm:mx-4 text-gray-400 dark:text-gray-500">=</span>
                     <span>{problem.a}</span>
                 </div>
             );
@@ -525,7 +525,7 @@ const TutorialPage: React.FC = () => {
         return (
             <div className="my-4 text-6xl md:text-7xl font-extrabold tracking-wider">
                 <span>{problem.a}</span>
-                <span className="mx-2 sm:mx-4 text-gray-400">{problem.operator}</span>
+                <span className="mx-2 sm:mx-4 text-gray-400 dark:text-gray-500">{problem.operator}</span>
                 <span>{problem.b}</span>
             </div>
         );
@@ -536,19 +536,19 @@ const TutorialPage: React.FC = () => {
         <div className="flex flex-col gap-4 h-full flex-grow relative">
             <button 
                 onClick={() => navigate(-1)} 
-                className="absolute top-4 right-4 z-20 flex items-center gap-2 px-3 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-md hover:bg-gray-200 transition-colors"
+                className="absolute top-4 right-4 z-20 flex items-center gap-2 px-3 py-2 bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm rounded-full shadow-md hover:bg-gray-200 dark:hover:bg-dark-subtle transition-colors"
                 aria-label="Volver"
             >
                 <ArrowLeftIcon className="w-6 h-6" /> <span className="hidden sm:inline">Volver</span>
             </button>
             
-            <div className="w-full bg-brand-primary/10 p-4 rounded-3xl">
-                <h1 className="text-2xl md:text-3xl font-extrabold text-brand-primary mb-3 text-center">{explanation.title}</h1>
+            <div className="w-full bg-brand-primary/10 dark:bg-dark-primary/10 p-4 rounded-3xl">
+                <h1 className="text-2xl md:text-3xl font-extrabold text-brand-primary dark:text-dark-primary mb-3 text-center">{explanation.title}</h1>
                 <GameModeExplanation gameMode={gameMode} operation={operation} />
                 {operation === 'division' ? <DivisionTutorialContent /> : (
                   <ul className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4">
                       {explanation.steps.map((step, index) => (
-                          <li key={index} className="flex items-center gap-2 bg-white/60 px-3 py-1 rounded-full shadow-sm">
+                          <li key={index} className="flex items-center gap-2 bg-white/60 dark:bg-dark-surface/60 px-3 py-1 rounded-full shadow-sm">
                               <span className="text-lg">✨</span>
                               <span className="text-sm md:text-base">{step}</span>
                           </li>
@@ -559,8 +559,8 @@ const TutorialPage: React.FC = () => {
 
             <div className="w-full flex-grow flex flex-col gap-4">
                  { feedbackMessage && (
-                     <div className={`p-3 rounded-2xl flex items-start gap-3 transition-colors ${isCorrect === true ? 'bg-green-100' : isCorrect === false ? 'bg-red-100' : 'bg-blue-100'}`}>
-                         <LightBulbIcon className={`w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 mt-1 ${isCorrect === true ? 'text-green-500' : isCorrect === false ? 'text-red-500' : 'text-blue-500'}`} />
+                     <div className={`p-3 rounded-2xl flex items-start gap-3 transition-colors ${isCorrect === true ? 'bg-green-100 dark:bg-green-900/50' : isCorrect === false ? 'bg-red-100 dark:bg-red-900/50' : 'bg-blue-100 dark:bg-blue-900/50'}`}>
+                         <LightBulbIcon className={`w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 mt-1 ${isCorrect === true ? 'text-green-500 dark:text-green-400' : isCorrect === false ? 'text-red-500 dark:text-red-400' : 'text-blue-500 dark:text-blue-400'}`} />
                          <div>
                              <p className="font-bold text-md sm:text-lg">{isCorrect ? '¡Excelente!' : 'Un consejo:'}</p>
                              <p className="text-sm sm:text-base whitespace-pre-line">{feedbackMessage}</p>
@@ -569,18 +569,18 @@ const TutorialPage: React.FC = () => {
                 )}
                 
                 <div className="flex-grow flex flex-col md:flex-row gap-4">
-                    <main className="bg-white p-4 rounded-3xl shadow-2xl text-center flex-grow flex flex-col items-center justify-center min-h-[250px]">
+                    <main className="bg-white dark:bg-dark-surface p-4 rounded-3xl shadow-2xl text-center flex-grow flex flex-col items-center justify-center min-h-[250px]">
                         <p className="text-lg md:text-xl mb-2 sm:mb-4">¡Ahora, a practicar!</p>
                         {renderProblemContent()}
                     </main>
 
                     <aside className="w-full md:max-w-xs lg:max-w-sm flex-shrink-0">
-                        <div className="bg-white/80 backdrop-blur-sm p-4 rounded-3xl shadow-lg flex flex-col h-full justify-center gap-4">
+                        <div className="bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm p-4 rounded-3xl shadow-lg flex flex-col h-full justify-center gap-4">
                              <input
                                 type="text"
                                 readOnly
                                 value={userAnswer}
-                                className="text-4xl sm:text-5xl text-center font-bold w-full p-2 sm:p-4 bg-gray-100 border-2 border-gray-200 rounded-2xl"
+                                className="text-4xl sm:text-5xl text-center font-bold w-full p-2 sm:p-4 bg-gray-100 dark:bg-dark-subtle border-2 border-gray-200 dark:border-slate-600 rounded-2xl"
                                 placeholder="?"
                             />
                             <NumberPad 

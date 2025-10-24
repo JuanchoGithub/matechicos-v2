@@ -300,10 +300,10 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
                     <div className={digitBoxClasses}>{operator}</div>
                     {num2Digits.map((d, i) => <div key={`num2-${i}`} className={`${digitBoxClasses} ${d === ' ' ? 'text-transparent' : ''}`}>{d}</div>)}
                 </div>
-                <hr className="border-t-4 border-brand-text my-[0.2em]" />
+                <hr className="border-t-4 border-brand-text dark:border-dark-text my-[0.2em]" />
                 <div className="flex justify-end">
                     {userAnswer.map((digit, index) => (
-                        <div key={index} onClick={() => setActiveDigitIndex(index)} className={`${digitBoxClasses} border-4 rounded-lg cursor-pointer transition-all ${activeDigitIndex === index ? 'border-brand-primary scale-105' : 'border-gray-300'}`}>{digit}</div>
+                        <div key={index} onClick={() => setActiveDigitIndex(index)} className={`${digitBoxClasses} border-4 rounded-lg cursor-pointer transition-all ${activeDigitIndex === index ? 'border-brand-primary dark:border-dark-primary scale-105' : 'border-gray-300 dark:border-dark-subtle'}`}>{digit}</div>
                     ))}
                 </div>
             </div>
@@ -322,12 +322,12 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
         <div className={`w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8 ${sidebarPosition === 'left' ? 'md:flex-row-reverse' : ''}`}>
             <main className="flex-grow flex flex-col relative min-w-0">
                 <HelpButton operation={operation} gameMode="staged" />
-                <div className="bg-white p-4 sm:p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
+                <div className="bg-white dark:bg-dark-surface p-4 sm:p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
                     <div className="w-full pb-2 mb-4 relative">
-                        <p className="text-xl md:text-2xl font-bold text-brand-text">{instructionText}</p>
+                        <p className="text-xl md:text-2xl font-bold text-brand-text dark:text-dark-text">{instructionText}</p>
                         {timeLeft !== null && stagesConfig[stageIndex].time && (
                             <div className="absolute top-0 right-0 w-24">
-                                <div className="w-full bg-gray-200 rounded-full h-4">
+                                <div className="w-full bg-gray-200 dark:bg-dark-subtle rounded-full h-4">
                                     <div className="bg-brand-secondary h-4 rounded-full transition-all duration-100 ease-linear" style={{ width: `${(timeLeft / stagesConfig[stageIndex].time!) * 100}%` }}></div>
                                 </div>
                             </div>
@@ -344,7 +344,7 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
             </main>
 
             <aside className="w-full md:max-w-sm flex-shrink-0">
-                <div className="relative bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col h-full">
+                <div className="relative bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col h-full">
                     <SidebarToggleButton />
                     <div className="flex-grow flex flex-col justify-center">
                         <NumberPad onNumberClick={handleNumberPadClick} onDeleteClick={handleDeleteClick} />

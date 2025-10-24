@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { grades } from '../data';
@@ -18,10 +19,10 @@ const TopicPage: React.FC = () => {
 
   return (
     <div className="text-center">
-      <h1 className="text-4xl md:text-5xl font-extrabold text-brand-primary mb-2">
+      <h1 className="text-4xl md:text-5xl font-extrabold text-brand-primary dark:text-dark-primary mb-2">
         {grade.name}
       </h1>
-      <h2 className="text-2xl md:text-3xl text-gray-500 mb-6">{TOPIC_TITLE}</h2>
+      <h2 className="text-2xl md:text-3xl text-gray-500 dark:text-gray-400 mb-6">{TOPIC_TITLE}</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {grade.topics.map((topic) => (
           <TopicCard key={topic.id} topic={topic} gradeId={grade.id} />
@@ -57,9 +58,9 @@ const TopicCard: React.FC<TopicCardProps> = ({ topic, gradeId }) => {
           {topicStats && <CompletionMedal completions={topicStats.completions} />}
         </div>
       </div>
-      <h3 className="text-3xl font-bold text-brand-text mb-4">{topic.name}</h3>
+      <h3 className="text-3xl font-bold text-brand-text dark:text-dark-text mb-4">{topic.name}</h3>
       {topicStats && (
-        <div className="text-left text-sm text-gray-600 bg-gray-100 p-3 rounded-lg mb-4 space-y-1 font-sans">
+        <div className="text-left text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-dark-subtle/50 p-3 rounded-lg mb-4 space-y-1 font-sans">
           <p><strong>Completado:</strong> {topicStats.completions} {topicStats.completions === 1 ? 'vez' : 'veces'}</p>
           <p><strong>Racha Máx:</strong> {topicStats.longestStreak} 🔥</p>
           {topicStats.bestTime !== undefined && (
@@ -70,16 +71,16 @@ const TopicCard: React.FC<TopicCardProps> = ({ topic, gradeId }) => {
 
       {!topic.challengeType ? (
         <>
-          <div className="w-full bg-gray-200 rounded-full h-4">
+          <div className="w-full bg-gray-200 dark:bg-dark-subtle rounded-full h-4">
             <div
               className="bg-brand-secondary h-4 rounded-full transition-all duration-500"
               style={{ width: `${progressPercentage}%` }}
             ></div>
           </div>
-          <p className="text-gray-500 mt-2">{`${completedCount} / ${totalCount} completados`}</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-2">{`${completedCount} / ${totalCount} completados`}</p>
         </>
       ) : (
-        <p className="text-brand-primary font-bold mt-2 text-lg">¡Desafío Especial!</p>
+        <p className="text-brand-primary dark:text-dark-primary font-bold mt-2 text-lg">¡Desafío Especial!</p>
       )}
     </Card>
   );

@@ -13,7 +13,7 @@ import { useUiStore } from './store/uiStore';
 const AppContent: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isTestMode, toggleTestMode } = useUiStore();
+  const { isTestMode, toggleTestMode, theme } = useUiStore();
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
@@ -51,9 +51,17 @@ const AppContent: React.FC = () => {
     return () => window.removeEventListener('keydown', keydownHandler);
   }, [toggleTestMode, isTestMode]);
 
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
+
 
   return (
-    <div className="min-h-screen font-sans text-brand-text flex flex-col">
+    <div className="min-h-screen font-sans text-brand-text dark:text-dark-text flex flex-col">
       <Header />
       <main className="container mx-auto p-4 pb-20 flex-grow flex flex-col">
         <Routes>

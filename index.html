@@ -8,6 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
+        darkMode: 'class',
         theme: {
           extend: {
             colors: {
@@ -19,6 +20,14 @@
                 correct: '#7ED321',
                 incorrect: '#D0021B',
               },
+              dark: {
+                background: '#1a202c',
+                surface: '#2d3748',
+                primary: '#63b3ed',
+                secondary: '#4fd1c5',
+                text: '#e2e8f0',
+                subtle: '#4a5568',
+              }
             },
             fontFamily: {
               sans: ['Arial', 'sans-serif'],
@@ -57,7 +66,7 @@
 }
 </script>
 </head>
-  <body class="bg-brand-background">
+  <body class="bg-brand-background dark:bg-dark-background dark:text-dark-text">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
