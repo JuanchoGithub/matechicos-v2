@@ -20,7 +20,8 @@ const TextNumberSelector: React.FC<TextNumberSelectorProps> = ({ problemText, on
 
     const numbers = useMemo(() => {
         try {
-            return Array.from(problemText.matchAll(numberRegex), (m, i) => {
+            // FIX: Add type annotation for 'm' to resolve TypeScript error.
+            return Array.from(problemText.matchAll(numberRegex), (m: RegExpMatchArray, i) => {
                 const data = JSON.parse(m[1]);
                 // Basic validation
                 if (!data.text || (data.value === undefined && data.answer === undefined)) {

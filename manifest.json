@@ -1,0 +1,21 @@
+{
+  "name": "Matechicos: Aventura de Números",
+  "short_name": "MathKids",
+  "description": "Una aplicación educativa modular e interactiva para que los niños de primaria (grados 1-5) practiquen matemáticas de una manera divertida y gamificada. Inspirada en Matechicos, ofrece ejercicios adaptativos, retroalimentación instantánea y seguimiento del progreso.",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#F7F9FB",
+  "theme_color": "#4A90E2",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/vite.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
