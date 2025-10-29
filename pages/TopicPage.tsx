@@ -98,17 +98,31 @@ const TopicCard: React.FC<TopicCardProps> = ({ topic, gradeId }) => {
   const { progressPercentage, completedCount, totalCount } = useProgress(topic);
   const topicStats = useProgressStore((state) => state.topicStats[topic.id]);
 
-  const getHighestMedal = (medals?: TopicStats['medals']): string | null => {
-    if (!medals) return null;
-    if (medals.rainbow) return 'rainbow';
-    if (medals.platinum) return 'platinum';
-    if (medals.gold) return 'gold';
-    if (medals.silver) return 'silver';
-    if (medals.bronze) return 'bronze';
+  const getMedalTier = (
+    topic: import('../types').Topic,
+    stats?: TopicStats
+  ): string | null => {
+    if (!stats) return null;
+
+    if (topic.challengeType) {
+      if (stats.medals?.rainbow) return 'rainbow';
+      if (stats.medals?.platinum) return 'platinum';
+      if (stats.medals?.gold) return 'gold';
+      if (stats.medals?.silver) return 'silver';
+      if (stats.medals?.bronze) return 'bronze';
+    } else {
+      const completions = stats.completions || 0;
+      if (completions >= 5) return 'rainbow';
+      if (completions === 4) return 'platinum';
+      if (completions === 3) return 'gold';
+      if (completions === 2) return 'silver';
+      if (completions === 1) return 'bronze';
+    }
+
     return null;
   };
 
-  const highestMedal = getHighestMedal(topicStats?.medals);
+  const medalTier = getMedalTier(topic, topicStats);
 
   const handleClick = () => {
     if (topic.challengeType) {
@@ -126,10 +140,10 @@ const TopicCard: React.FC<TopicCardProps> = ({ topic, gradeId }) => {
   let subtextColorClass = "text-gray-500 dark:text-gray-400";
   let challengeTextColorClass = "text-brand-primary dark:text-dark-primary";
 
-  if (highestMedal) {
+  if (medalTier) {
       titleColorClass = ""; // Will inherit from Card
       
-      switch (highestMedal) {
+      switch (medalTier) {
           case 'bronze':
           case 'rainbow':
               statsBgClass = "bg-black/20";
@@ -164,7 +178,7 @@ const TopicCard: React.FC<TopicCardProps> = ({ topic, gradeId }) => {
 
 
   return (
-    <Card onClick={handleClick} medalTier={highestMedal}>
+    <Card onClick={handleClick} medalTier={medalTier}>
       <div className="flex justify-center items-start gap-4 mb-4">
         <div className="text-8xl">{topic.icon}</div>
         <div className="pt-2">
