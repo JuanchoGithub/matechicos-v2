@@ -213,10 +213,10 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
         (currentStep === 2 && decomposedFinalAnswer.some(d => d === ''));
 
     const renderDecompositionSum = () => {
-        const num1Str = String(correctTensAnswer);
-        const num2Str = String(correctUnitsAnswer);
+        const num1Str = tensAnswer;
+        const num2Str = unitsAnswer;
         
-        const numCols = Math.max(String(correctTensAnswer).length, String(correctUnitsAnswer).length, decomposedFinalAnswer.length);
+        const numCols = Math.max(num1Str.length, num2Str.length, decomposedFinalAnswer.length);
 
         const num1Digits = num1Str.padStart(numCols, ' ').split('');
         const num2Digits = num2Str.padStart(numCols, ' ').split('');
