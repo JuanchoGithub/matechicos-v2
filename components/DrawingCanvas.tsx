@@ -156,7 +156,7 @@ const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({ childr
         onMouseMove={draw}
         onTouchStart={startDrawing}
         onTouchMove={draw}
-        className={`absolute top-0 left-0 w-full h-full z-0 bg-transparent ${mode === 'erase' ? 'eraser-cursor' : ''}`}
+        className={`absolute top-0 left-0 w-full h-full z-0 bg-transparent touch-none ${mode === 'erase' ? 'eraser-cursor' : ''}`}
       />
     </div>
   );
