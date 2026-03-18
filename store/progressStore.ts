@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { Attempt } from '../types';
 
 export interface TopicStats {
   completions: number;
@@ -24,6 +25,7 @@ interface ProgressState {
   streak: number;
   topicStats: Record<string, TopicStats>;
   topicProgress: Record<string, TopicProgress>;
+  attempts: Attempt[];
   addCompletedExercise: (exerciseId: string) => void;
   incrementStreak: () => void;
   resetStreak: () => void;
@@ -31,6 +33,7 @@ interface ProgressState {
   updateChallengeStats: (topicId: string, streak: number, score: number, isTrollMode: boolean, trollStageReached: number, didWin: boolean) => void;
   recordCorrectAnswerForTopic: (topicId: string, stageThreshold: number) => void;
   getTopicProgress: (topicId: string) => TopicProgress;
+  addAttempt: (attempt: Attempt) => void;
 }
 
 const initialTopicStats: TopicStats = {
@@ -51,10 +54,15 @@ export const useProgressStore = create<ProgressState>()(
       streak: 0,
       topicStats: {},
       topicProgress: {},
+      attempts: [],
 
       getTopicProgress: (topicId: string) => {
         return get().topicProgress[topicId] || { ...initialTopicProgress };
       },
+
+      addAttempt: (attempt) => set((state) => ({
+        attempts: [attempt, ...state.attempts].slice(0, 50) // Keep last 50 attempts
+      })),
 
       addCompletedExercise: (exerciseId) =>
         set((state) => ({

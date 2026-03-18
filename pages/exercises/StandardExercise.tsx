@@ -31,7 +31,8 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
         resetStreak, 
         recordCompletion,
         getTopicProgress,
-        recordCorrectAnswerForTopic
+        recordCorrectAnswerForTopic,
+        addAttempt
     } = useProgressStore();
     const { setHeaderContent, clearHeaderContent, setStatusBarContent, clearStatusBarContent, isTestMode, sidebarPosition } = useUiStore();
 
@@ -46,6 +47,7 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
     const topicProgress = getTopicProgress(topic.id);
     const drawingCanvasRef = useRef<DrawingCanvasRef>(null);
     const [drawingMode, setDrawingMode] = useState<'draw' | 'erase'>('draw');
+    const [pressedKey, setPressedKey] = useState<string | null>(null);
 
     const [wordProblemState, setWordProblemState] = useState<{
         step: 'numbers' | 'operation' | 'solve';
@@ -56,6 +58,46 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
         selectedNumbers: [],
         selectedOperation: null,
     });
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Only handle keyboard if we are in a state that expects number input
+            const isSolving = currentExercise?.type === ExerciseType.NumberInput || 
+                             currentExercise?.type === ExerciseType.EpicWordProblem ||
+                             (currentExercise?.type === ExerciseType.WordProblem && wordProblemState.step === 'solve');
+            
+            if (!isSolving || feedback) return;
+
+            if (e.key >= '0' && e.key <= '9') {
+                setPressedKey(e.key);
+                setUserAnswer(prev => prev.length < 5 ? prev + e.key : prev);
+            } else if (e.key === 'Backspace') {
+                setPressedKey('Backspace');
+                setUserAnswer(prev => prev.slice(0, -1));
+            } else if (e.key === 'Enter') {
+                if (userAnswer.length > 0) {
+                    handleAnswerSubmit();
+                }
+            }
+        };
+
+        const handleKeyUp = (e: KeyboardEvent) => {
+            setPressedKey(prev => prev === e.key ? null : prev);
+        };
+
+        const handleBlur = () => {
+            setPressedKey(null);
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        window.addEventListener('blur', handleBlur);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+            window.removeEventListener('blur', handleBlur);
+        };
+    }, [currentExercise, wordProblemState.step, feedback, userAnswer]);
     
     const practicePool = useMemo(() => {
         let pool = topic.exercises.filter(ex => !completedExercises[ex.id]);
@@ -77,8 +119,19 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
             if (topic.exercises.length > 0) {
                 const finalStreak = useProgressStore.getState().streak;
                 recordCompletion(topic.id, topic.exercises.map(e => e.id), finalStreak);
-                alert("¡Felicitaciones! Completaste todos los ejercicios de este tema.");
-                navigate(`/grade/${gradeId}`);
+                
+                // Record successful attempt for parents
+                addAttempt({
+                    id: crypto.randomUUID(),
+                    timestamp: Date.now(),
+                    topicId: topic.id,
+                    topicName: topic.name,
+                    score: 100,
+                    didWin: true
+                });
+                
+                setFeedback('finished');
+                // navigate(`/grade/${gradeId}`); // This will be handled by the finished state or a button
             }
             return;
         }
@@ -252,6 +305,21 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
             setFeedback('incorrect');
             resetStreak();
             setExplanation(explainer);
+
+            // Record failed attempt for parents
+            addAttempt({
+                id: crypto.randomUUID(),
+                timestamp: Date.now(),
+                topicId: topic.id,
+                topicName: topic.name,
+                score: 0,
+                didWin: false,
+                lastFailure: {
+                    question: (currentExercise as any).question || (currentExercise as any).problemText || 'Ejercicio de razonamiento',
+                    correctAnswer: String((currentExercise as any).answer || 'Ver explicación'),
+                    userAnswer: userAnswer,
+                }
+            });
         }
     };
 
@@ -354,7 +422,7 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
                 case 'solve': return (
                     <div><h3 className="text-xl font-bold mb-4 text-center">3. Resolvé la cuenta</h3>
                         <input type="text" readOnly value={userAnswer} className="text-4xl text-center font-bold w-full mb-4 p-4 bg-gray-100 dark:bg-dark-subtle border-2 border-gray-200 dark:border-dark-subtle rounded-2xl focus:outline-none" placeholder="#" />
-                        <NumberPad onNumberClick={(num) => setUserAnswer(prev => (prev.length < 5 ? prev + num : prev))} onDeleteClick={() => setUserAnswer(prev => prev.slice(0, -1))} />
+                        <NumberPad onNumberClick={(num) => setUserAnswer(prev => (prev.length < 5 ? prev + num : prev))} onDeleteClick={() => setUserAnswer(prev => prev.slice(0, -1))} pressedKey={pressedKey} />
                     </div>);
             }
         }
@@ -364,7 +432,7 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
                 <div>
                     <h3 className="text-xl font-bold mb-4 text-center">Escribí el resultado final</h3>
                     <input type="text" readOnly value={userAnswer} className="text-4xl text-center font-bold w-full mb-4 p-4 bg-gray-100 dark:bg-dark-subtle border-2 border-gray-200 dark:border-dark-subtle rounded-2xl focus:outline-none" placeholder="#" />
-                    <NumberPad onNumberClick={(num) => setUserAnswer(prev => (prev.length < 5 ? prev + num : prev))} onDeleteClick={() => setUserAnswer(prev => prev.slice(0, -1))} />
+                    <NumberPad onNumberClick={(num) => setUserAnswer(prev => (prev.length < 5 ? prev + num : prev))} onDeleteClick={() => setUserAnswer(prev => prev.slice(0, -1))} pressedKey={pressedKey} />
                 </div>
             );
         }
@@ -379,7 +447,7 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
                 return (
                     <div>
                         <input type="text" readOnly value={userAnswer} className="text-4xl text-center font-bold w-full mb-4 p-4 bg-gray-100 dark:bg-dark-subtle border-2 border-gray-200 dark:border-dark-subtle rounded-2xl focus:outline-none" placeholder="#" />
-                        <NumberPad onNumberClick={(num) => setUserAnswer(prev => (prev.length < 5 ? prev + num : prev))} onDeleteClick={() => setUserAnswer(prev => prev.slice(0, -1))} />
+                        <NumberPad onNumberClick={(num) => setUserAnswer(prev => (prev.length < 5 ? prev + num : prev))} onDeleteClick={() => setUserAnswer(prev => prev.slice(0, -1))} pressedKey={pressedKey} />
                     </div>);
             default: return null;
         }
@@ -396,6 +464,26 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
     return (
         <div className={`w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8 ${sidebarPosition === 'left' ? 'md:flex-row-reverse' : ''}`}>
             <main className="flex-grow flex flex-col relative min-w-0">
+                <div className="mb-4 flex justify-between items-center bg-white/50 dark:bg-dark-surface/50 p-3 rounded-2xl backdrop-blur-sm border border-white/20">
+                    <div className="flex flex-col">
+                        <span className="text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400 font-bold">Tema Actual</span>
+                        <span className="text-lg font-bold text-brand-primary dark:text-dark-primary">{topic.name}</span>
+                    </div>
+                    {isProgressiveWordProblem && (
+                        <div className="text-right">
+                            <span className="text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400 font-bold">Nivel</span>
+                            <div className="flex items-center gap-1">
+                                <span className="text-lg font-bold text-brand-secondary">{topicProgress.stage + 1}</span>
+                                <div className="flex gap-0.5">
+                                    {[0, 1, 2, 3, 4].map(s => (
+                                        <div key={s} className={`w-2 h-2 rounded-full ${s <= topicProgress.stage ? 'bg-brand-secondary' : 'bg-gray-300 dark:bg-gray-600'}`} />
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
                 {operation && !isEpicProblem && <HelpButton operation={operation} gameMode={isProgressiveWordProblem ? 'word-problem' : undefined} />}
                 {isEpicProblem 
                     ? renderEpicProblemMain()
@@ -411,6 +499,20 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
             </aside>
             {feedback === 'correct' && <FeedbackModal isCorrect={true} onNext={pickNextExercise} />}
             {feedback === 'incorrect' && <FeedbackModal isCorrect={false} onNext={handleIncorrectFeedbackClose} explanation={explanation} />}
+            {feedback === 'finished' && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-dark-surface rounded-3xl p-8 max-w-md w-full text-center shadow-2xl">
+                        <div className="text-8xl mb-6">🏆</div>
+                        <h2 className="text-3xl font-bold mb-4 text-brand-primary dark:text-dark-primary">¡Increíble!</h2>
+                        <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
+                            Has completado todos los ejercicios de <strong>{topic.name}</strong>.
+                        </p>
+                        <Button onClick={() => navigate(`/grade/${gradeId}`)} className="w-full">
+                            Volver al menú
+                        </Button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

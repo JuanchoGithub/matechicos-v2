@@ -4,7 +4,7 @@ import { grades } from '../data';
 import Button from '../components/Button';
 import NumberPad from '../components/NumberPad';
 import { useProgressStore } from '../store/progressStore';
-import { Topic } from '../types';
+import { Topic, Attempt, FailedExercise } from '../types';
 import HelpButton from '../components/HelpButton';
 import { useUiStore } from '../store/uiStore';
 import SidebarToggleButton from '../components/SidebarToggleButton';
@@ -235,7 +235,7 @@ type NewlyAwardedMedal = {
 const ChallengePage: React.FC = () => {
     const { gradeId, topicId } = useParams();
     const navigate = useNavigate();
-    const { incrementStreak, resetStreak, topicStats, updateChallengeStats } = useProgressStore();
+    const { incrementStreak, resetStreak, topicStats, updateChallengeStats, addAttempt } = useProgressStore();
     const { isTestMode, sidebarPosition, setOverrideStreak } = useUiStore();
 
     const topic = grades.find(g => g.id === gradeId)?.topics.find(t => t.id === topicId);
@@ -270,6 +270,7 @@ const ChallengePage: React.FC = () => {
     
     const [endReason, setEndReason] = useState<EndReasonState>(null);
     const [newlyAwardedMedal, setNewlyAwardedMedal] = useState<NewlyAwardedMedal>(null);
+    const [pressedKey, setPressedKey] = useState<string | null>(null);
 
 
     const timerIntervalRef = useRef<number | null>(null);
@@ -293,6 +294,7 @@ const ChallengePage: React.FC = () => {
         setScore(0);
         setUserAnswer('');
         setProblem(generateProblem(operation));
+        setPressedKey(null);
         if (operation === 'division') {
             setDivisionWarmup({ phase: 1, progress: 0 });
         }
@@ -315,13 +317,30 @@ const ChallengePage: React.FC = () => {
         if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
         const finalStreak = useProgressStore.getState().streak;
         
+        // Record attempt for parents section
+        const lastFailure: FailedExercise | undefined = reason === 'incorrect' ? {
+            question: `${problem.a} ${operatorMap[operation]} ${problem.b}`,
+            correctAnswer: String(problem.answer),
+            userAnswer: userAnswer,
+        } : undefined;
+
+        addAttempt({
+            id: crypto.randomUUID(),
+            timestamp: Date.now(),
+            topicId: topicId,
+            topicName: topic.name,
+            score: score,
+            didWin: didWin,
+            lastFailure: lastFailure,
+        });
+
         // Medal detection logic
-        const statsBefore = useProgressStore.getState().topicStats[topicId] || {};
+        const statsBefore = (useProgressStore.getState().topicStats[topicId] || {}) as any;
         const medalsBefore = statsBefore.medals || {};
         
         updateChallengeStats(topicId, finalStreak, score, isTrollMode, trollProgress.stage, didWin);
         
-        const statsAfter = useProgressStore.getState().topicStats[topicId] || {};
+        const statsAfter = (useProgressStore.getState().topicStats[topicId] || {}) as any;
         const medalsAfter = statsAfter.medals || {};
 
         let bestNewMedal: NewlyAwardedMedal = null;
@@ -464,6 +483,41 @@ const ChallengePage: React.FC = () => {
             checkAnswer();
         }
     }, [userAnswer, problem.answer, checkAnswer]);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (gameState !== 'playing' && gameState !== 'warmup') return;
+            
+            if (e.key >= '0' && e.key <= '9') {
+                setPressedKey(e.key);
+                setUserAnswer(prev => prev.length < 3 ? prev + e.key : prev);
+            } else if (e.key === 'Backspace') {
+                setPressedKey('Backspace');
+                setUserAnswer(prev => prev.slice(0, -1));
+            } else if (e.key === 'Enter') {
+                if (userAnswer.length > 0) {
+                    checkAnswer();
+                }
+            }
+        };
+
+        const handleKeyUp = (e: KeyboardEvent) => {
+            setPressedKey(prev => prev === e.key ? null : prev);
+        };
+
+        const handleBlur = () => {
+            setPressedKey(null);
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        window.addEventListener('blur', handleBlur);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+            window.removeEventListener('blur', handleBlur);
+        };
+    }, [gameState, userAnswer.length, checkAnswer]);
     
     useEffect(() => {
         if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
@@ -502,6 +556,7 @@ const ChallengePage: React.FC = () => {
         setOverrideStreak(null);
         setIsTrollMode(troll);
         setScore(0);
+        setPressedKey(null);
 
         if (troll) {
             setTrollProgress({ stage: 0, countInStage: 0 });
@@ -645,6 +700,11 @@ const ChallengePage: React.FC = () => {
                                     <>
                                         <h1 className="text-5xl font-extrabold text-green-500 mb-4">¡DESAFÍO SUPERADO!</h1>
                                         <ChallengeEndAnimation {...endScreenProgress} />
+                                        <div className="text-base bg-gray-100 dark:bg-dark-subtle p-4 rounded-lg mt-6 text-left space-y-2">
+                                            <p className="text-center font-bold text-yellow-600">🏆 ¡Felicitaciones! Ganaste el trofeo de Oro 🥇</p>
+                                            <p><strong>Puntaje Final:</strong> <span className="font-bold text-brand-secondary dark:text-dark-secondary"><AnimatedNumber value={endReason?.scoreAtEnd ?? 0} /></span></p>
+                                            <p><strong>Racha Lograda:</strong> <span className="font-bold text-yellow-500"><AnimatedNumber value={endReason?.streakAtEnd ?? 0} /> 🔥</span></p>
+                                        </div>
                                     </>
                                 ) : (
                                     <>
@@ -654,6 +714,21 @@ const ChallengePage: React.FC = () => {
                                         <ChallengeEndAnimation {...endScreenProgress} />
 
                                         <div className="text-base bg-gray-100 dark:bg-dark-subtle p-4 rounded-lg mt-6 text-left space-y-2">
+                                            {/* Trophy Message */}
+                                            {(() => {
+                                                if (isTrollMode) {
+                                                    if (endReason?.trollWin) return <p className="text-center font-bold text-purple-600">🏆 ¡Felicitaciones! Ganaste el trofeo Arcoíris 🌈</p>;
+                                                    if (endReason?.trollStage && endReason.trollStage >= 2) return <p className="text-center font-bold text-blue-600">🏆 ¡Felicitaciones! Llegaste al trofeo de Platino 💎</p>;
+                                                    return <p className="text-center font-bold text-gray-600">¡Seguí intentando para llegar al trofeo de Platino!</p>;
+                                                }
+                                                
+                                                const s = endReason?.scoreAtEnd ?? 0;
+                                                if (s >= WINNING_SCORE) return <p className="text-center font-bold text-yellow-600">🏆 ¡Felicitaciones! Ganaste el trofeo de Oro 🥇</p>;
+                                                if (s >= 60) return <p className="text-center font-bold text-gray-400">🏆 ¡Felicitaciones! Llegaste al trofeo de Plata 🥈. Te faltaron {WINNING_SCORE - s} más para llegar al trofeo de Oro.</p>;
+                                                if (s >= 40) return <p className="text-center font-bold text-amber-700">🏆 ¡Felicitaciones! Llegaste al trofeo de Bronce 🥉. Te faltaron {60 - s} más para llegar al trofeo de Plata.</p>;
+                                                return <p className="text-center font-bold text-gray-600">Te faltaron {40 - s} más para llegar al trofeo de Bronce.</p>;
+                                            })()}
+
                                             <p><strong>Resultado:</strong> {endReason?.type === 'timeout' ? '¡Se acabó el tiempo!' : 'Respuesta incorrecta.'}</p>
                                             <p><strong>Puntaje Final:</strong> <span className="font-bold text-brand-secondary dark:text-dark-secondary"><AnimatedNumber value={endReason?.scoreAtEnd ?? 0} /></span></p>
                                             <p><strong>Racha Lograda:</strong> <span className="font-bold text-yellow-500"><AnimatedNumber value={endReason?.streakAtEnd ?? 0} /> 🔥</span></p>
@@ -711,7 +786,13 @@ const ChallengePage: React.FC = () => {
                     
                     {isTrollMode ? (
                         <div className="text-center mb-2">
-                            <p className="font-bold text-purple-600 dark:text-purple-400">MODO TROLL - {activeTrollStages[trollProgress.stage].name}</p>
+                            <div className="flex justify-between items-center mb-1">
+                                <p className="font-bold text-purple-600 dark:text-purple-400">MODO TROLL - {activeTrollStages[trollProgress.stage].name}</p>
+                                <div className="flex items-center gap-1">
+                                    {trollProgress.stage >= 2 ? <span title="Platino">💎</span> : <span className="opacity-30">💎</span>}
+                                    {trollProgress.stage >= 4 ? <span title="Arcoíris">🌈</span> : <span className="opacity-30">🌈</span>}
+                                </div>
+                            </div>
                             <div className="w-full bg-gray-200 dark:bg-dark-subtle rounded-full h-2.5 mt-1">
                                 <div className="bg-purple-500 h-2.5 rounded-full" style={{width: `${(trollProgress.countInStage / activeTrollStages[trollProgress.stage].count) * 100}%`}}></div>
                             </div>
@@ -728,7 +809,16 @@ const ChallengePage: React.FC = () => {
                     ) : isWarmingUp ? (
                         <p className="font-bold text-brand-primary dark:text-dark-primary mb-2">CALENTAMIENTO: {score} / {WARMUP_COUNT}</p>
                     ) : (
-                        <p className="font-bold text-brand-secondary dark:text-dark-secondary mb-2">PUNTAJE: {score} / {WINNING_SCORE}</p>
+                        <div className="text-center mb-2">
+                            <div className="flex justify-between items-center mb-1">
+                                <p className="font-bold text-brand-secondary dark:text-dark-secondary">PUNTAJE: {score} / {WINNING_SCORE}</p>
+                                <div className="flex items-center gap-2 text-xl">
+                                    <span className={score >= 40 ? "opacity-100" : "opacity-20"} title="Bronce">🥉</span>
+                                    <span className={score >= 60 ? "opacity-100" : "opacity-20"} title="Plata">🥈</span>
+                                    <span className={score >= 70 ? "opacity-100" : "opacity-20"} title="Oro">🥇</span>
+                                </div>
+                            </div>
+                        </div>
                     )}
 
                     {(gameState === 'playing' && (!isTrollMode || activeTrollStages[trollProgress.stage].time !== null)) && (
@@ -761,6 +851,7 @@ const ChallengePage: React.FC = () => {
                     <NumberPad 
                         onNumberClick={(num) => setUserAnswer(prev => prev.length < 3 ? prev + num : prev)}
                         onDeleteClick={() => setUserAnswer(prev => prev.slice(0, -1))}
+                        pressedKey={pressedKey}
                     />
                 </div>
             </aside>

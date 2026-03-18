@@ -1,6 +1,6 @@
 import { StageConfig } from './types';
 
-export const APP_TITLE = "MathKids";
+export const APP_TITLE = "MathKids v2.0";
 export const HOME_TITLE = "Elegí tu Grado";
 export const TOPIC_TITLE = "Elegí un Tema";
 export const CORRECT_FEEDBACK = "¡Correcto!";

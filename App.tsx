@@ -5,6 +5,7 @@ import TopicPage from './pages/TopicPage';
 import ExercisePage from './pages/ExercisePage';
 import ChallengePage from './pages/ChallengePage';
 import TutorialPage from './pages/TutorialPage';
+import ParentsPage from './pages/ParentsPage';
 import Header from './components/Header';
 import StatusBar from './components/StatusBar';
 import { useUiStore } from './store/uiStore';
@@ -71,6 +72,7 @@ const AppContent: React.FC = () => {
           <Route path="/grade/:gradeId/topic/:topicId" element={<ExercisePage />} />
           <Route path="/grade/:gradeId/challenge/:topicId" element={<ChallengePage />} />
           <Route path="/tutorial/:operation/:gameMode?" element={<TutorialPage />} />
+          <Route path="/parents" element={<ParentsPage />} />
         </Routes>
       </main>
       <StatusBar />

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import NumberPad from '../components/NumberPad';
 import Button from '../components/Button';
@@ -336,6 +336,7 @@ const TutorialPage: React.FC = () => {
     const [userAnswer, setUserAnswer] = useState('');
     const [feedbackMessage, setFeedbackMessage] = useState('');
     const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+    const [pressedKey, setPressedKey] = useState<string | null>(null);
     const [multiplicationRemediationStep, setMultiplicationRemediationStep] = useState(0); 
     const [divisionRemediationStep, setDivisionRemediationStep] = useState(0);
 
@@ -351,6 +352,7 @@ const TutorialPage: React.FC = () => {
         setUserAnswer('');
         setFeedbackMessage('');
         setIsCorrect(null);
+        setPressedKey(null);
         setMultiplicationRemediationStep(0);
         setDivisionRemediationStep(0);
         setAdditionWizard({ step: 0, unitsResult: '', tensResult: '', carry: null });
@@ -363,7 +365,7 @@ const TutorialPage: React.FC = () => {
         b_tens: Math.floor(problem.b / 10),
     }), [problem]);
 
-    const handleSubmit = () => {
+    const handleSubmit = useCallback(() => {
         if (!userAnswer || !operation) return;
 
         const answerNumber = parseInt(userAnswer, 10);
@@ -446,7 +448,40 @@ const TutorialPage: React.FC = () => {
                 }
             }
         }
-    };
+    }, [userAnswer, operation, a_units, b_units, a_tens, b_tens, additionWizard, problem, multiplicationRemediationStep, divisionRemediationStep]);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key >= '0' && e.key <= '9') {
+                setPressedKey(e.key);
+                setUserAnswer(prev => prev.length < 5 ? prev + e.key : prev);
+            } else if (e.key === 'Backspace') {
+                setPressedKey('Backspace');
+                setUserAnswer(prev => prev.slice(0, -1));
+            } else if (e.key === 'Enter') {
+                if (userAnswer.length > 0) {
+                    handleSubmit();
+                }
+            }
+        };
+
+        const handleKeyUp = (e: KeyboardEvent) => {
+            setPressedKey(prev => prev === e.key ? null : prev);
+        };
+
+        const handleBlur = () => {
+            setPressedKey(null);
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        window.addEventListener('blur', handleBlur);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+            window.removeEventListener('blur', handleBlur);
+        };
+    }, [userAnswer, handleSubmit]);
     
     if (!operation) {
         navigate('/');
@@ -579,6 +614,7 @@ const TutorialPage: React.FC = () => {
                             <NumberPad 
                                 onNumberClick={(num) => setUserAnswer(prev => prev.length < 5 ? prev + num : prev)}
                                 onDeleteClick={() => setUserAnswer(prev => prev.slice(0, -1))}
+                                pressedKey={pressedKey}
                             />
                              <div className="flex flex-col gap-2">
                                 <Button onClick={handleSubmit} disabled={!userAnswer || additionWizard.step === 3} className="w-full">Revisá</Button>

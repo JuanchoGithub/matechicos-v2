@@ -91,6 +91,22 @@ export interface ReasoningGauntletExercise extends BaseExercise {
 }
 
 
+export interface FailedExercise {
+  question: string;
+  correctAnswer: string;
+  userAnswer: string;
+}
+
+export interface Attempt {
+  id: string;
+  timestamp: number;
+  topicId: string;
+  topicName: string;
+  score: number;
+  didWin: boolean;
+  lastFailure?: FailedExercise;
+}
+
 export type Exercise = MultipleChoiceExercise | NumberInputExercise | DecompositionSubtractionExercise | WordProblemExercise | EpicWordProblemExercise | ReasoningGauntletExercise;
 
 export interface Topic {
