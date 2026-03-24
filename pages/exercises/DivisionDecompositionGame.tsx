@@ -201,6 +201,8 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
     }, [stageIndex, setupProblem]);
     
     useEffect(() => {
+        if (isDailyChallenge) return;
+        
         const headerComponent = (
             <div className="flex justify-between items-center w-full">
                 <h1 className="text-xl md:text-2xl font-bold text-white tracking-wider">División Larga por Pasos</h1>
@@ -214,8 +216,10 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
             </div>
         );
         setHeaderContent(headerComponent);
-        return () => clearHeaderContent();
-    }, [stageIndex, progressInStage, setHeaderContent, clearHeaderContent]);
+        return () => {
+            if (!isDailyChallenge) clearHeaderContent();
+        };
+    }, [stageIndex, progressInStage, setHeaderContent, clearHeaderContent, isDailyChallenge]);
 
     const handleNextProblem = () => {
         setFeedback(null);
@@ -224,7 +228,7 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
             return;
         }
         if (isGameComplete) {
-            recordCompletion(topic.id, [], useProgressStore.getState().streak, undefined, 15);
+            recordCompletion(topic.id, [], useProgressStore.getState().streak);
             navigate(`/grade/${gradeId}`);
             return;
         }
@@ -262,7 +266,7 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
 
             if (isCorrect) {
                 incrementStreak();
-                addCompletedExercise(topic.id, `${topic.id}-${stageIndex}-${progressInStage}`, 15);
+                addCompletedExercise(`${topic.id}-${stageIndex}-${progressInStage}`);
                 setFeedback('correct');
             } else {
                 handleIncorrect();
@@ -391,9 +395,9 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
         if (step !== 0 && step !== 3) return null;
 
         return (
-            <div className="p-3 bg-yellow-100 dark:bg-yellow-900/50 border-2 border-yellow-300 dark:border-yellow-700 rounded-lg text-yellow-800 dark:text-yellow-200 font-sans h-full animate-fade-in">
-                <p className="font-bold mb-2 text-center text-base">💡 Tabla del {divisor}</p>
-                <div className="flex flex-col items-center space-y-1 text-sm sm:text-base">
+            <div className="p-1 md:p-3 bg-yellow-100 dark:bg-yellow-900/50 border-2 border-yellow-300 dark:border-yellow-700 rounded-lg text-yellow-800 dark:text-yellow-200 font-sans h-auto md:h-full animate-fade-in">
+                <p className="font-bold mb-1 md:mb-2 text-center text-sm md:text-base">💡 Tabla del {divisor}</p>
+                <div className="flex flex-col items-center space-y-0 md:space-y-1 text-xs sm:text-base">
                     {Array.from({ length: 9 }, (_, i) => {
                         const n = i + 1;
                         const result = divisor * n;
@@ -414,7 +418,7 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
         feedback === 'correct';
 
     return (
-        <div className={`w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8 ${sidebarPosition === 'left' ? 'md:flex-row-reverse' : ''}`}>
+        <div className={`w-full flex-grow flex flex-col md:flex-row gap-2 md:gap-8 ${sidebarPosition === 'left' ? 'md:flex-row-reverse' : ''}`}>
             {showHelp && (
                 <HelpPanel 
                     operation="division" 
@@ -424,11 +428,11 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
             )}
             <main className="flex-grow flex flex-col relative min-w-0">
                 <HelpButton operation="division" gameMode="division-decomposition" onClick={() => setShowHelp(!showHelp)} />
-                <div className="bg-white dark:bg-dark-surface p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
+                <div className="bg-white dark:bg-dark-surface p-1 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
                     
                     {/* Interactive prompt */}
-                    <div className="font-sans text-lg md:text-xl p-4 bg-gray-50 dark:bg-dark-subtle/50 rounded-lg w-full max-w-3xl mx-auto">
-                        <div className="text-center text-base sm:text-lg md:text-xl lg:text-2xl font-semibold text-gray-700 dark:text-gray-300 mb-3 h-16 flex items-center justify-center">
+                    <div className="font-sans text-lg md:text-xl p-1 md:p-4 bg-gray-50 dark:bg-dark-subtle/50 rounded-lg w-full max-w-3xl mx-auto">
+                        <div className="text-center text-base sm:text-lg md:text-xl lg:text-2xl font-semibold text-gray-700 dark:text-gray-300 mb-0.5 md:mb-3 h-8 md:h-16 flex items-center justify-center">
                             {getPrompt()}
                         </div>
                         {step === 6 ? (
@@ -454,13 +458,13 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
                         )}
                     </div>
 
-                    <div className="flex-grow flex flex-col md:flex-row items-start justify-center pt-4 gap-8">
-                        <div className="hidden md:block w-48 flex-shrink-0">
-                            {renderMultiplicationHint()}
-                        </div>
-                        <div className="flex-grow flex flex-col items-center justify-center font-mono text-6xl sm:text-5xl">
-                           <div className="w-[12rem] h-[21rem] sm:w-[16rem] sm:h-[28rem]">
-                               <div className="relative origin-top-left scale-[0.75] sm:scale-100" style={{ width: '16rem', height: '28rem' }}>
+                        <div className="flex-grow flex flex-col md:flex-row items-start justify-center pt-0.5 md:pt-4 gap-1 md:gap-8">
+                            <div className="hidden md:block w-48 flex-shrink-0">
+                                {renderMultiplicationHint()}
+                            </div>
+                            <div className="flex-grow flex flex-col items-center justify-center font-mono text-3xl sm:text-5xl">
+                               <div className="w-[7rem] h-[12rem] sm:w-[16rem] sm:h-[28rem]">
+                                   <div className="relative origin-top-left scale-[0.45] sm:scale-100" style={{ width: '16rem', height: '28rem' }}>
                                     {/* Quotient */}
                                     <div className="absolute top-0 right-16 w-20 text-right">
                                         <Digit highlight={highlights['q1']}>{step === 0 ? userInput : quotient1}</Digit>
@@ -519,12 +523,12 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
                 </div>
             </main>
             <aside className="w-full md:max-w-sm flex-shrink-0">
-                <div className="relative bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col h-full">
+                <div className="relative bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm p-1 md:p-6 rounded-3xl shadow-lg flex flex-col h-full">
                     <SidebarToggleButton />
-                    <div className="flex-grow flex flex-col justify-center">
+                    <div className="flex flex-col justify-start md:justify-center md:flex-grow">
                         <NumberPad onNumberClick={handleNumberPadClick} onDeleteClick={handleDeleteClick} />
                     </div>
-                    <Button onClick={handleAnswerSubmit} disabled={isSubmitDisabled} className="w-full mt-4">{SUBMIT_BUTTON}</Button>
+                    <Button onClick={handleAnswerSubmit} disabled={isSubmitDisabled} className="w-full mt-0.5 md:mt-4">{SUBMIT_BUTTON}</Button>
                 </div>
             </aside>
             {feedback && (<FeedbackModal isCorrect={feedback === 'correct'} onNext={feedback === 'correct' ? handleNextProblem : handleIncorrectClose} explanation={explanation} />)}

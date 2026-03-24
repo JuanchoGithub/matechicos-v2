@@ -114,6 +114,8 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
     }, [currentStep, correctFinalAnswer]);
 
     useEffect(() => {
+        if (isDailyChallenge) return;
+        
         const header = (
             <StageProgressBar
                 stages={STAGES_CONFIG}
@@ -122,8 +124,10 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
             />
         );
         setHeaderContent(header);
-        return () => clearHeaderContent();
-    }, [stageIndex, progressInStage, setHeaderContent, clearHeaderContent]);
+        return () => {
+            if (!isDailyChallenge) clearHeaderContent();
+        };
+    }, [stageIndex, progressInStage, setHeaderContent, clearHeaderContent, isDailyChallenge]);
 
     const handleNextProblem = () => {
         setFeedback(null);
@@ -132,7 +136,7 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
             return;
         }
         if (isGameComplete) {
-            recordCompletion(topic.id, [], useProgressStore.getState().streak, undefined, 15);
+            recordCompletion(topic.id, [], useProgressStore.getState().streak);
             navigate(`/grade/${gradeId}`);
             return;
         }
@@ -180,7 +184,7 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
             if (currentStep === 3) {
                 // Problem complete
                 incrementStreak();
-                addCompletedExercise(topic.id, `${topic.id}-${stageIndex}-${progressInStage}`, 15);
+                addCompletedExercise(`${topic.id}-${stageIndex}-${progressInStage}`);
                 setFeedback('correct');
             } else {
                 setCurrentStep(prev => prev + 1);
@@ -292,7 +296,7 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
     };
 
     return (
-        <div className={`w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8 ${sidebarPosition === 'left' ? 'md:flex-row-reverse' : ''}`}>
+        <div className={`w-full flex-grow flex flex-col md:flex-row gap-2 md:gap-8 ${sidebarPosition === 'left' ? 'md:flex-row-reverse' : ''}`}>
             {showHelp && (
                 <HelpPanel 
                     operation="multiplication" 
@@ -302,39 +306,39 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
             )}
             <main className="flex-grow flex flex-col relative min-w-0">
                 <HelpButton operation="multiplication" gameMode="multiplication-decomposition" onClick={() => setShowHelp(!showHelp)} />
-                <div className="bg-white dark:bg-dark-surface p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
-                    <div className="flex-grow flex flex-col items-center justify-center font-mono text-xl sm:text-2xl md:text-3xl lg:text-4xl space-y-4 md:space-y-6">
+                <div className="bg-white dark:bg-dark-surface p-3 sm:p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
+                    <div className="flex-grow flex flex-col items-center justify-center font-mono text-lg sm:text-2xl md:text-3xl lg:text-4xl space-y-2 md:space-y-6">
                         {/* Problem statement */}
-                        <div className="font-bold text-4xl sm:text-4xl md:text-5xl tracking-wider">
+                        <div className="font-bold text-3xl sm:text-4xl md:text-5xl tracking-wider">
                             <span>{num1}</span>
-                            <span className="mx-4 text-gray-400 dark:text-gray-500">×</span>
+                            <span className="mx-2 md:mx-4 text-gray-400 dark:text-gray-500">×</span>
                             <span>{num2}</span>
                         </div>
 
                         {/* Visual Decomposition */}
-                        <div className="text-center">
-                            <p className="text-xl text-gray-600 dark:text-gray-400 font-sans mb-2">Descomponemos {num1} en:</p>
-                            <div className="flex items-center justify-center gap-2">
+                        <div className="text-center scale-90 sm:scale-100">
+                            <p className="text-base sm:text-xl text-gray-600 dark:text-gray-400 font-sans mb-1">Descomponemos {num1} en:</p>
+                            <div className="flex items-center justify-center gap-1 sm:gap-2">
                                 <div className="flex flex-col items-center">
-                                    <span className="px-3 py-2 border-2 border-brand-primary dark:border-dark-primary rounded-lg text-brand-primary dark:text-dark-primary">{num1Tens}</span>
-                                    <span className="text-gray-500 dark:text-gray-400 mt-2 font-sans text-lg">Decenas</span>
+                                    <span className="px-2 py-1 sm:px-3 sm:py-2 border-2 border-brand-primary dark:border-dark-primary rounded-lg text-brand-primary dark:text-dark-primary text-base sm:text-xl">{num1Tens}</span>
+                                    <span className="text-gray-500 dark:text-gray-400 mt-1 font-sans text-xs sm:text-lg">Decenas</span>
                                 </div>
-                                <span className="text-4xl font-light text-gray-400 dark:text-gray-500 mx-2">+</span>
+                                <span className="text-2xl sm:text-4xl font-light text-gray-400 dark:text-gray-500 mx-1">+</span>
                                 <div className="flex flex-col items-center">
-                                    <span className="px-3 py-2 border-2 border-brand-secondary dark:border-dark-secondary rounded-lg text-brand-secondary dark:text-dark-secondary">{num1Units}</span>
-                                    <span className="text-gray-500 dark:text-gray-400 mt-2 font-sans text-lg">Unidades</span>
+                                    <span className="px-2 py-1 sm:px-3 sm:py-2 border-2 border-brand-secondary dark:border-dark-secondary rounded-lg text-brand-secondary dark:text-dark-secondary text-base sm:text-xl">{num1Units}</span>
+                                    <span className="text-gray-500 dark:text-gray-400 mt-1 font-sans text-xs sm:text-lg">Unidades</span>
                                 </div>
                             </div>
                         </div>
 
 
                         {/* Step-by-step problem */}
-                        <div className="space-y-4 w-full max-w-lg mx-auto font-sans text-lg sm:text-xl md:text-2xl">
+                        <div className="space-y-2 md:space-y-4 w-full max-w-lg mx-auto font-sans text-base sm:text-xl md:text-2xl">
                             {/* Units Step */}
                             <div className="flex items-center justify-between transition-opacity duration-500" style={{ opacity: currentStep >= 0 ? 1 : 0.3 }}>
                                 <span className="text-brand-secondary dark:text-dark-secondary">{num1Units} × {num2} =</span>
                                 <div className="flex items-center gap-2">
-                                    <input type="text" readOnly value={unitsAnswer} placeholder="?" className={`w-28 text-center font-bold p-2 rounded-lg border-2 ${currentStep === 0 ? 'border-brand-primary dark:border-dark-primary' : 'border-gray-200 dark:border-dark-subtle'} bg-gray-100 dark:bg-dark-subtle`} />
+                                    <input type="text" readOnly value={unitsAnswer} placeholder="?" className={`w-20 sm:w-28 text-center font-bold p-1 sm:p-2 rounded-lg border-2 ${currentStep === 0 ? 'border-brand-primary dark:border-dark-primary' : 'border-gray-200 dark:border-dark-subtle'} bg-gray-100 dark:bg-dark-subtle`} />
                                 </div>
                             </div>
 
@@ -342,7 +346,7 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
                             <div className="flex items-center justify-between transition-opacity duration-500" style={{ opacity: currentStep >= 1 ? 1 : 0.3 }}>
                                 <span className="text-brand-primary dark:text-dark-primary">{num1TensDigit} × {num2} =</span>
                                 <div className="flex items-center gap-2">
-                                    <input type="text" readOnly value={tensDigitAnswer} placeholder="?" className={`w-28 text-center font-bold p-2 rounded-lg border-2 ${currentStep === 1 ? 'border-brand-primary dark:border-dark-primary' : 'border-gray-200 dark:border-dark-subtle'} bg-gray-100 dark:bg-dark-subtle`} />
+                                    <input type="text" readOnly value={tensDigitAnswer} placeholder="?" className={`w-20 sm:w-28 text-center font-bold p-1 sm:p-2 rounded-lg border-2 ${currentStep === 1 ? 'border-brand-primary dark:border-dark-primary' : 'border-gray-200 dark:border-dark-subtle'} bg-gray-100 dark:bg-dark-subtle`} />
                                 </div>
                             </div>
 
@@ -350,15 +354,15 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
                             <div className="flex items-center justify-between transition-opacity duration-500" style={{ opacity: currentStep >= 2 ? 1 : 0.3 }}>
                                 <span className="text-brand-primary dark:text-dark-primary">{tensDigitAnswer || '?'} × 10 =</span>
                                 <div className="flex items-center gap-2">
-                                    <input type="text" readOnly value={tensAnswer} placeholder="?" className={`w-28 text-center font-bold p-2 rounded-lg border-2 ${currentStep === 2 ? 'border-brand-primary dark:border-dark-primary' : 'border-gray-200 dark:border-dark-subtle'} bg-gray-100 dark:bg-dark-subtle`} />
+                                    <input type="text" readOnly value={tensAnswer} placeholder="?" className={`w-20 sm:w-28 text-center font-bold p-1 sm:p-2 rounded-lg border-2 ${currentStep === 2 ? 'border-brand-primary dark:border-dark-primary' : 'border-gray-200 dark:border-dark-subtle'} bg-gray-100 dark:bg-dark-subtle`} />
                                 </div>
                             </div>
 
 
                             {/* Final Sum Step */}
-                            <div className="pt-4 mt-4 border-t-4 border-dashed transition-opacity duration-500" style={{ opacity: currentStep >= 3 ? 1 : 0.3 }}>
-                                <p className="text-lg text-center mb-2">Ahora sumamos los resultados:</p>
-                                <div className="flex items-center justify-center relative pr-10">
+                            <div className="pt-2 mt-2 border-t-2 md:border-t-4 border-dashed transition-opacity duration-500" style={{ opacity: currentStep >= 3 ? 1 : 0.3 }}>
+                                <p className="text-sm sm:text-lg text-center mb-1">Ahora sumamos los resultados:</p>
+                                <div className="flex items-center justify-center relative pr-0 md:pr-10 scale-90 sm:scale-100">
                                      {renderDecompositionSum()}
                                 </div>
                             </div>
@@ -368,7 +372,7 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
             </main>
 
             <aside className="w-full md:max-w-sm flex-shrink-0">
-                <div className="relative bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col h-full">
+                <div className="relative bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm p-4 md:p-6 rounded-3xl shadow-lg flex flex-col h-full">
                     <SidebarToggleButton />
                     <div className="flex-grow flex flex-col justify-center">
                         <NumberPad
@@ -376,7 +380,7 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
                             onDeleteClick={handleDeleteClick}
                         />
                     </div>
-                    <Button onClick={handleAnswerSubmit} disabled={isSubmitDisabled} className="w-full mt-4">
+                    <Button onClick={handleAnswerSubmit} disabled={isSubmitDisabled} className="w-full mt-2 md:mt-4">
                         {SUBMIT_BUTTON}
                     </Button>
                 </div>

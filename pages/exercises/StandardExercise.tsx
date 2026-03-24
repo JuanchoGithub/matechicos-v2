@@ -179,6 +179,8 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId, isD
     }, [currentExercise]);
 
     useEffect(() => {
+        if (isDailyChallenge) return;
+        
         if (currentExercise) {
             let headerContent;
             if (isProgressiveWordProblem) {
@@ -211,8 +213,10 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId, isD
             }
             setHeaderContent(headerContent);
         }
-        return () => clearHeaderContent();
-    }, [topic.name, currentExercise, setHeaderContent, clearHeaderContent, isProgressiveWordProblem, isEpicProblem, topicProgress.stage, topicProgress.correctInStage]);
+        return () => {
+            if (!isDailyChallenge) clearHeaderContent();
+        };
+    }, [topic.name, currentExercise, setHeaderContent, clearHeaderContent, isProgressiveWordProblem, isEpicProblem, topicProgress.stage, topicProgress.correctInStage, isDailyChallenge]);
 
     useEffect(() => {
         if (isEpicProblem) {

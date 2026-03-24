@@ -194,6 +194,8 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
 
     // Header Progress Bar Effect
     useEffect(() => {
+        if (isDailyChallenge) return;
+        
         const header = (
             <StageProgressBar
                 stages={stagesConfig}
@@ -202,8 +204,10 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
             />
         );
         setHeaderContent(header);
-        return () => clearHeaderContent();
-    }, [stageIndex, progressInStage, setHeaderContent, clearHeaderContent, stagesConfig]);
+        return () => {
+            if (!isDailyChallenge) clearHeaderContent();
+        };
+    }, [stageIndex, progressInStage, setHeaderContent, clearHeaderContent, stagesConfig, isDailyChallenge]);
 
     // Status Bar Controls Effect
     useEffect(() => {
@@ -240,7 +244,7 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
             if (stageConfig.time && stageStartTimeRef.current > 0) {
                 timeTaken = Date.now() - stageStartTimeRef.current;
             }
-            recordCompletion(topic.id, [], finalStreak, timeTaken, 15);
+            recordCompletion(topic.id, [], finalStreak, timeTaken);
             navigate(`/grade/${gradeId}`);
             return;
         }
@@ -272,7 +276,7 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
 
         if (isCorrect) {
             incrementStreak();
-            addCompletedExercise(topic.id, `${topic.id}-${stageIndex}-${progressInStage}`, 15);
+            addCompletedExercise(`${topic.id}-${stageIndex}-${progressInStage}`);
             const newProgress = progressInStage + 1;
 
             if (newProgress >= stagesConfig[stageIndex].total) {
@@ -362,7 +366,7 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
     const instructionText = `Resolvé la siguiente ${instructionTextMap[operation]}:`;
 
     return (
-        <div className={`w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8 ${sidebarPosition === 'left' ? 'md:flex-row-reverse' : ''}`}>
+        <div className={`w-full flex-grow flex flex-col md:flex-row gap-2 md:gap-8 ${sidebarPosition === 'left' ? 'md:flex-row-reverse' : ''}`}>
             {showHelp && (
                 <HelpPanel 
                     operation={operation} 
@@ -372,20 +376,20 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
             )}
             <main className="flex-grow flex flex-col relative min-w-0">
                 <HelpButton operation={operation} gameMode="staged" onClick={() => setShowHelp(!showHelp)} />
-                <div className="bg-white dark:bg-dark-surface p-4 sm:p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
-                    <div className="w-full pb-2 mb-4 relative">
-                        <p className="text-xl md:text-2xl font-bold text-brand-text dark:text-dark-text">{instructionText}</p>
+                <div className="bg-white dark:bg-dark-surface p-3 sm:p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
+                    <div className="w-full pb-1 mb-2 relative">
+                        <p className="text-lg md:text-2xl font-bold text-brand-text dark:text-dark-text">{instructionText}</p>
                         {timeLeft !== null && stagesConfig[stageIndex].time && (
-                            <div className="absolute top-0 right-0 w-24">
-                                <div className="w-full bg-gray-200 dark:bg-dark-subtle rounded-full h-4">
-                                    <div className="bg-brand-secondary h-4 rounded-full transition-all duration-100 ease-linear" style={{ width: `${(timeLeft / stagesConfig[stageIndex].time!) * 100}%` }}></div>
+                            <div className="absolute top-0 right-0 w-16 md:w-24">
+                                <div className="w-full bg-gray-200 dark:bg-dark-subtle rounded-full h-2 md:h-4">
+                                    <div className="bg-brand-secondary h-2 md:h-4 rounded-full transition-all duration-100 ease-linear" style={{ width: `${(timeLeft / stagesConfig[stageIndex].time!) * 100}%` }}></div>
                                 </div>
                             </div>
                         )}
                     </div>
                     <div className="flex-grow flex flex-col items-center justify-center">
                         <DrawingCanvas ref={drawingCanvasRef} mode={drawingMode}>
-                            <div className="w-full h-full flex flex-col items-center justify-center p-2 sm:p-4">
+                            <div className="w-full h-full flex flex-col items-center justify-center p-1 sm:p-4">
                                 {renderDecompositionProblem()}
                             </div>
                         </DrawingCanvas>
@@ -394,12 +398,12 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
             </main>
 
             <aside className="w-full md:max-w-sm flex-shrink-0">
-                <div className="relative bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col h-full">
+                <div className="relative bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm p-4 md:p-6 rounded-3xl shadow-lg flex flex-col h-full">
                     <SidebarToggleButton />
                     <div className="flex-grow flex flex-col justify-center">
                         <NumberPad onNumberClick={handleNumberPadClick} onDeleteClick={handleDeleteClick} />
                     </div>
-                    <Button onClick={handleAnswerSubmit} disabled={!isAnswerFilled} className="w-full mt-4">{SUBMIT_BUTTON}</Button>
+                    <Button onClick={handleAnswerSubmit} disabled={!isAnswerFilled} className="w-full mt-2 md:mt-4">{SUBMIT_BUTTON}</Button>
                 </div>
             </aside>
 

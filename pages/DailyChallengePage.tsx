@@ -32,11 +32,11 @@ const DailyChallengePage: React.FC = () => {
 
     // Get topics for each section
     const grade3 = grades.find(g => g.id === 'grade-3');
-    const speedTopics = grade3?.topics.filter(t => t.challengeType) || [];
-    const decompositionTopics = grade3?.topics.filter(t => t.id.startsWith('decomposition-')) || [];
-    const problemTopics = grade3?.topics.filter(t => t.id === 'word-problems-add-subtract') || [];
-    const epicTopics = grade3?.topics.filter(t => t.id === 'epic-word-problems') || [];
-    const cluesTopics = grade3?.topics.filter(t => t.id === 'reasoning-word-problems') || [];
+    const speedTopics = useMemo(() => grade3?.topics.filter(t => t.challengeType) || [], [grade3]);
+    const decompositionTopics = useMemo(() => grade3?.topics.filter(t => t.id.startsWith('decomposition-')) || [], [grade3]);
+    const problemTopics = useMemo(() => grade3?.topics.filter(t => t.id === 'word-problems-add-subtract') || [], [grade3]);
+    const epicTopics = useMemo(() => grade3?.topics.filter(t => t.id === 'epic-word-problems') || [], [grade3]);
+    const cluesTopics = useMemo(() => grade3?.topics.filter(t => t.id === 'reasoning-word-problems') || [], [grade3]);
 
     useEffect(() => {
         const hearts = Array.from({ length: 3 }).map((_, i) => (

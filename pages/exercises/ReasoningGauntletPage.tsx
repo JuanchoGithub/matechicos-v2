@@ -65,11 +65,15 @@ const ReasoningGauntletPage: React.FC<ReasoningGauntletPageProps> = ({ topic, gr
     }, [topic.id]);
 
     useEffect(() => {
+        if (isDailyChallenge) return;
+        
         if (currentExercise) {
             setHeaderContent(<h1 className="text-xl md:text-2xl font-bold text-white tracking-wider">{topic.name}</h1>);
         }
-        return () => clearHeaderContent();
-    }, [topic.name, currentExercise, setHeaderContent, clearHeaderContent]);
+        return () => {
+            if (!isDailyChallenge) clearHeaderContent();
+        };
+    }, [topic.name, currentExercise, setHeaderContent, clearHeaderContent, isDailyChallenge]);
     
     const translatableNumbers = useMemo(() =>
         selectedNumbers.filter((n): n is TranslatableNumberInText => 'prompt' in n),
@@ -141,7 +145,7 @@ const ReasoningGauntletPage: React.FC<ReasoningGauntletPageProps> = ({ topic, gr
 
         if (isCorrect) {
             setFeedback('correct');
-            addCompletedExercise(topic.id, currentExercise.id, topic.exercises.length);
+            addCompletedExercise(currentExercise.id);
             incrementStreak();
         } else {
             setFeedback('incorrect');
