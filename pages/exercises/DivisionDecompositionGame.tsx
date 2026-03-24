@@ -201,8 +201,6 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
     }, [stageIndex, setupProblem]);
     
     useEffect(() => {
-        if (isDailyChallenge) return;
-        
         const headerComponent = (
             <div className="flex justify-between items-center w-full">
                 <h1 className="text-xl md:text-2xl font-bold text-white tracking-wider">División Larga por Pasos</h1>
@@ -216,10 +214,8 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
             </div>
         );
         setHeaderContent(headerComponent);
-        return () => {
-            if (!isDailyChallenge) clearHeaderContent();
-        };
-    }, [stageIndex, progressInStage, setHeaderContent, clearHeaderContent, isDailyChallenge]);
+        return () => clearHeaderContent();
+    }, [stageIndex, progressInStage, setHeaderContent, clearHeaderContent]);
 
     const handleNextProblem = () => {
         setFeedback(null);

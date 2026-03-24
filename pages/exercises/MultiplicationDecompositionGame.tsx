@@ -114,8 +114,6 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
     }, [currentStep, correctFinalAnswer]);
 
     useEffect(() => {
-        if (isDailyChallenge) return;
-        
         const header = (
             <StageProgressBar
                 stages={STAGES_CONFIG}
@@ -124,10 +122,8 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
             />
         );
         setHeaderContent(header);
-        return () => {
-            if (!isDailyChallenge) clearHeaderContent();
-        };
-    }, [stageIndex, progressInStage, setHeaderContent, clearHeaderContent, isDailyChallenge]);
+        return () => clearHeaderContent();
+    }, [stageIndex, progressInStage, setHeaderContent, clearHeaderContent]);
 
     const handleNextProblem = () => {
         setFeedback(null);

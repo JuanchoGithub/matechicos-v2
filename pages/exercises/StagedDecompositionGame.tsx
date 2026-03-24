@@ -194,8 +194,6 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
 
     // Header Progress Bar Effect
     useEffect(() => {
-        if (isDailyChallenge) return;
-        
         const header = (
             <StageProgressBar
                 stages={stagesConfig}
@@ -204,10 +202,8 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
             />
         );
         setHeaderContent(header);
-        return () => {
-            if (!isDailyChallenge) clearHeaderContent();
-        };
-    }, [stageIndex, progressInStage, setHeaderContent, clearHeaderContent, stagesConfig, isDailyChallenge]);
+        return () => clearHeaderContent();
+    }, [stageIndex, progressInStage, setHeaderContent, clearHeaderContent, stagesConfig]);
 
     // Status Bar Controls Effect
     useEffect(() => {
