@@ -18,11 +18,14 @@ type Operation = 'addition' | 'subtraction' | 'multiplication' | 'division';
 interface StandardExerciseProps {
     topic: Topic;
     gradeId: string;
+    isDailyChallenge?: boolean;
+    onComplete?: () => void;
+    onFailure?: () => void;
 }
 
 const STAGE_THRESHOLD = 10;
 
-const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) => {
+const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId, isDailyChallenge, onComplete, onFailure }) => {
     const navigate = useNavigate();
     const { 
         completedExercises, 
@@ -296,14 +299,24 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId }) =
 
         if (isCorrect) {
             setFeedback('correct');
-            addCompletedExercise(currentExercise.id);
-            incrementStreak();
-            if (isProgressiveWordProblem) {
-                recordCorrectAnswerForTopic(topic.id, STAGE_THRESHOLD);
+            if (isDailyChallenge) {
+                setTimeout(() => {
+                    onComplete?.();
+                }, 600);
+            } else {
+                addCompletedExercise(currentExercise.id);
+                incrementStreak();
+                if (isProgressiveWordProblem) {
+                    recordCorrectAnswerForTopic(topic.id, STAGE_THRESHOLD);
+                }
             }
         } else {
             setFeedback('incorrect');
-            resetStreak();
+            if (isDailyChallenge) {
+                onFailure?.();
+            } else {
+                resetStreak();
+            }
             setExplanation(explainer);
 
             // Record failed attempt for parents

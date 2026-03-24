@@ -15,14 +15,16 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isCorrect, onNext, explan
   const Icon = isCorrect ? CheckCircleIcon : SadFaceIcon;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-20 transition-opacity duration-300">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 transition-opacity duration-300">
       <div className={`
         ${bgColor} 
         text-white 
         rounded-2xl 
-        p-8 
+        p-6 sm:p-8 
         w-11/12 
         md:w-1/3 
+        max-h-[90vh]
+        overflow-y-auto
         text-center 
         shadow-2xl 
         transform 

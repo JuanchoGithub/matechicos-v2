@@ -10,7 +10,7 @@ export const SUBMIT_BUTTON = "Revisá";
 export const TRY_AGAIN_BUTTON = "Intentar de nuevo";
 
 export const STAGES_CONFIG: StageConfig[] = [
-    { name: 'F1', total: 10 },
-    { name: 'F2', total: 10 },
-    { name: 'F3', total: 5, time: 60000 },
+    { name: '🥉', total: 10 },
+    { name: '🥈', total: 10 },
+    { name: '🥇', total: 5, time: 60000 },
 ];

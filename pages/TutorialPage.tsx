@@ -31,9 +31,9 @@ const GameModeExplanation: React.FC<{ gameMode?: string, operation: Operation }>
             content = (
                 <ul className="list-disc list-inside space-y-2">
                     <li>Este desafío te ayuda a practicar {operation === 'addition' ? 'sumas' : 'restas'} "paradas" (verticales) en <strong>3 Fases</strong>.</li>
-                    <li><strong>Fase 1 (F1):</strong> Resolvé 10 cuentas. Serán números de 2 cifras contra números de 1 cifra. ¡Ideal para calentar!</li>
-                    <li><strong>Fase 2 (F2):</strong> La dificultad sube. Ahora son 10 cuentas de números de 2 cifras contra otros de 2 cifras.</li>
-                    <li><strong>Fase 3 (F3):</strong> ¡El desafío final! Tenés que resolver 5 cuentas, ¡pero con <strong>tiempo</strong>! Un reloj aparecerá y tendrás que ser rápido y preciso.</li>
+                    <li><strong>Fase 1 (🥉):</strong> Resolvé 10 cuentas. Serán números de 2 cifras contra números de 1 cifra. ¡Ideal para calentar!</li>
+                    <li><strong>Fase 2 (🥈):</strong> La dificultad sube. Ahora son 10 cuentas de números de 2 cifras contra otros de 2 cifras.</li>
+                    <li><strong>Fase 3 (🥇):</strong> ¡El desafío final! Tenés que resolver 5 cuentas, ¡pero con <strong>tiempo</strong>! Un reloj aparecerá y tendrás que ser rápido y preciso.</li>
                     <li>Usá el lápiz para hacer cálculos en la pantalla como si fuera tu cuaderno.</li>
                     <li>Completá las 3 fases para demostrar que dominás la técnica.</li>
                 </ul>
@@ -52,9 +52,9 @@ const GameModeExplanation: React.FC<{ gameMode?: string, operation: Operation }>
                     </ul>
                     <h3 className="font-bold">Las Fases:</h3>
                     <ul className="list-disc list-inside space-y-1 pl-2">
-                        <li><strong>Fase 1 (F1):</strong> 10 multiplicaciones usando números del 2 al 5 como multiplicador.</li>
-                        <li><strong>Fase 2 (F2):</strong> 10 multiplicaciones con los números más difíciles: del 6 al 9.</li>
-                        <li><strong>Fase 3 (F3):</strong> ¡El desafío de velocidad! 5 cuentas contra reloj para probar tu maestría.</li>
+                        <li><strong>Fase 1 (🥉):</strong> 10 multiplicaciones usando números del 2 al 5 como multiplicador.</li>
+                        <li><strong>Fase 2 (🥈):</strong> 10 multiplicaciones con los números más difíciles: del 6 al 9.</li>
+                        <li><strong>Fase 3 (🥇):</strong> ¡El desafío de velocidad! 5 cuentas contra reloj para probar tu maestría.</li>
                     </ul>
                 </>
             );
@@ -75,9 +75,9 @@ const GameModeExplanation: React.FC<{ gameMode?: string, operation: Operation }>
                     </ul>
                     <h3 className="font-bold">Las Fases:</h3>
                     <ul className="list-disc list-inside space-y-1 pl-2">
-                       <li><strong>Fase 1 (F1):</strong> 10 divisiones con divisores fáciles (del 2 al 5).</li>
-                        <li><strong>Fase 2 (F2):</strong> 10 divisiones con todos los divisores (del 2 al 9).</li>
-                        <li><strong>Fase 3 (F3):</strong> 5 divisiones contra el reloj. ¡A pensar rápido!</li>
+                       <li><strong>Fase 1 (🥉):</strong> 10 divisiones con divisores fáciles (del 2 al 5).</li>
+                        <li><strong>Fase 2 (🥈):</strong> 10 divisiones con todos los divisores (del 2 al 9).</li>
+                        <li><strong>Fase 3 (🥇):</strong> 5 divisiones contra el reloj. ¡A pensar rápido!</li>
                     </ul>
                  </>
             );

@@ -60,34 +60,55 @@ interface Problem {
 
 type Operation = 'addition' | 'subtraction' | 'multiplication' | 'division';
 
-const generateProblem = (operation: Operation, currentProblem?: Problem, divisionPhase: number = 1): Problem => {
+const generateProblem = (operation: Operation, history: Problem[] = [], divisionPhase: number = 1): Problem => {
     let newProblem: Problem;
-    switch (operation) {
-        case 'subtraction':
-            do {
+    const maxAttempts = 20;
+    let attempts = 0;
+
+    const isTooSimilar = (p: Problem) => {
+        // Check last 6 problems for exact duplicates or reversed operands
+        const recentHistory = history.slice(-6);
+        for (const old of recentHistory) {
+            // Exact same problem
+            if (p.a === old.a && p.b === old.b) return true;
+            
+            // Reversed operands (for commutative operations)
+            if ((operation === 'addition' || operation === 'multiplication') && 
+                p.a === old.b && p.b === old.a) return true;
+        }
+
+        // Check last 3 problems for same answer to avoid sequences like 2+3, 1+4, 5+0
+        const veryRecentHistory = history.slice(-3);
+        for (const old of veryRecentHistory) {
+            if (p.answer === old.answer) return true;
+        }
+
+        return false;
+    };
+
+    do {
+        attempts++;
+        switch (operation) {
+            case 'subtraction': {
                 const a = Math.floor(Math.random() * 9) + 1; // 1-9
                 const b = Math.floor(Math.random() * a); // 0 to a-1
                 newProblem = { a, b, answer: a - b };
-            } while (currentProblem && newProblem.a === currentProblem.a && newProblem.b === currentProblem.b);
-            break;
-        case 'addition':
-            do {
+                break;
+            }
+            case 'addition': {
                 const a = Math.floor(Math.random() * 8) + 1; // 1 to 8
                 const b = Math.floor(Math.random() * (9 - a)) + 1; // 1 to (9-a) to keep sum <= 9
                 newProblem = { a, b, answer: a + b };
-            } while (currentProblem && newProblem.a === currentProblem.a && newProblem.b === currentProblem.b);
-            break;
-        case 'multiplication':
-            do {
+                break;
+            }
+            case 'multiplication': {
                 const a = Math.floor(Math.random() * 9) + 1; // 1-9
                 const b = Math.floor(Math.random() * 9) + 1; // 1-9
                 newProblem = { a, b, answer: a * b };
-            } while (currentProblem && newProblem.a === currentProblem.a && newProblem.b === currentProblem.b);
-            break;
-        case 'division':
-            let a, b;
-            do {
-                // divisionPhase > 3 means it's in timed "playing" mode
+                break;
+            }
+            case 'division': {
+                let a, b;
                 if (divisionPhase === 1) { // Phase 1: 1-digit / 2
                     b = 2;
                     const potentialAs = [2, 4, 6, 8];
@@ -105,9 +126,13 @@ const generateProblem = (operation: Operation, currentProblem?: Problem, divisio
                     a = b * multiplier;
                 }
                 newProblem = { a, b, answer: a / b };
-            } while (currentProblem && newProblem.a === currentProblem.a && newProblem.b === currentProblem.b);
-            break;
-    }
+                break;
+            }
+            default:
+                newProblem = { a: 0, b: 0, answer: 0 };
+        }
+    } while (isTooSimilar(newProblem) && attempts < maxAttempts);
+
     return newProblem;
 };
 
@@ -259,6 +284,7 @@ const ChallengePage: React.FC = () => {
     const [gameState, setGameState] = useState<'start' | 'warmup' | 'playing' | 'end'>('start');
     const [isTrollMode, setIsTrollMode] = useState(false);
     
+    const [problemHistory, setProblemHistory] = useState<Problem[]>([]);
     const [problem, setProblem] = useState<Problem>(() => generateProblem(operation));
     const [userAnswer, setUserAnswer] = useState('');
     const [score, setScore] = useState(0);
@@ -293,7 +319,9 @@ const ChallengePage: React.FC = () => {
         setGameState('start');
         setScore(0);
         setUserAnswer('');
-        setProblem(generateProblem(operation));
+        const initialProblem = generateProblem(operation);
+        setProblem(initialProblem);
+        setProblemHistory([initialProblem]);
         setPressedKey(null);
         if (operation === 'division') {
             setDivisionWarmup({ phase: 1, progress: 0 });
@@ -409,7 +437,11 @@ const ChallengePage: React.FC = () => {
                     setTimeLeft(currentStageConfig.time);
                 }
             }
-            setProblem(prev => generateProblem(operation, prev, operation === 'division' ? 4 : 1));
+            setProblem(prev => {
+                const next = generateProblem(operation, problemHistory, operation === 'division' ? 4 : 1);
+                setProblemHistory(h => [...h.slice(-10), next]);
+                return next;
+            });
             return;
         }
         
@@ -427,14 +459,26 @@ const ChallengePage: React.FC = () => {
                         const initialTime = 30000;
                         setTimeLeft(initialTime);
                         setMaxTime(initialTime);
-                        setProblem(prev => generateProblem(operation, prev, 4));
+                        setProblem(prev => {
+                            const next = generateProblem(operation, problemHistory, 4);
+                            setProblemHistory(h => [...h.slice(-10), next]);
+                            return next;
+                        });
                     } else {
                         setDivisionWarmup({ phase: newPhase, progress: 0 });
-                        setProblem(prev => generateProblem(operation, prev, newPhase));
+                        setProblem(prev => {
+                            const next = generateProblem(operation, problemHistory, newPhase);
+                            setProblemHistory(h => [...h.slice(-10), next]);
+                            return next;
+                        });
                     }
                 } else {
                     setDivisionWarmup(prev => ({ ...prev, progress: newProgress }));
-                    setProblem(prev => generateProblem(operation, prev, divisionWarmup.phase));
+                    setProblem(prev => {
+                        const next = generateProblem(operation, problemHistory, divisionWarmup.phase);
+                        setProblemHistory(h => [...h.slice(-10), next]);
+                        return next;
+                    });
                 }
             } else { 
                 if (newScore >= WARMUP_COUNT) {
@@ -464,7 +508,11 @@ const ChallengePage: React.FC = () => {
             }
         } 
         
-        setProblem(prevProblem => generateProblem(operation, prevProblem, divisionWarmup.phase > 3 ? 4 : divisionWarmup.phase));
+        setProblem(prevProblem => {
+            const next = generateProblem(operation, problemHistory, divisionWarmup.phase > 3 ? 4 : divisionWarmup.phase);
+            setProblemHistory(h => [...h.slice(-10), next]);
+            return next;
+        });
         
     }, [score, gameState, incrementStreak, isTrollMode, operation, divisionWarmup, trollProgress, handleGameEnd, activeTrollStages]);
 
@@ -562,16 +610,22 @@ const ChallengePage: React.FC = () => {
             setTrollProgress({ stage: 0, countInStage: 0 });
             setGameState('playing');
             // For troll mode, division problems should be the "hard" kind (phase 4)
-            setProblem(generateProblem(operation, undefined, operation === 'division' ? 4 : 1));
+            const initialProblem = generateProblem(operation, [], operation === 'division' ? 4 : 1);
+            setProblem(initialProblem);
+            setProblemHistory([initialProblem]);
         } else {
             // Normal mode
             if (operation === 'division') {
                 // Division starts with its special warmup phase 1
                 setDivisionWarmup({ phase: 1, progress: 0 });
-                setProblem(generateProblem(operation, undefined, 1));
+                const initialProblem = generateProblem(operation, [], 1);
+                setProblem(initialProblem);
+                setProblemHistory([initialProblem]);
             } else {
                 // Other operations just start
-                setProblem(generateProblem(operation));
+                const initialProblem = generateProblem(operation);
+                setProblem(initialProblem);
+                setProblemHistory([initialProblem]);
             }
             setGameState('warmup');
         }

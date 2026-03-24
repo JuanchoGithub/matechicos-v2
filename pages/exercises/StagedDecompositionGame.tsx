@@ -12,35 +12,65 @@ import StageProgressBar from '../../components/StageProgressBar';
 import { PencilIcon, EraserIcon, ResetIcon } from '../../components/icons';
 import HelpButton from '../../components/HelpButton';
 import SidebarToggleButton from '../../components/SidebarToggleButton';
+import HelpPanel from '../../components/HelpPanel';
 
-const generateAdditionProblem = (stage: number): { a: number; b: number } => {
+const generateAdditionProblem = (stage: number, history: { a: number, b: number }[] = []): { a: number; b: number } => {
     let a, b;
-    if (stage === 0) { // Stage 1: 2-digit plus 1-digit
-        a = Math.floor(Math.random() * 90) + 10; // 10-99
-        b = Math.floor(Math.random() * 9) + 1;  // 1-9
-    } else { // Stage 2 & 3: 2-digit plus 2-digit
-        a = Math.floor(Math.random() * 90) + 10;
-        b = Math.floor(Math.random() * 90) + 10;
-    }
+    const maxAttempts = 20;
+    let attempts = 0;
+
+    const isTooSimilar = (newA: number, newB: number) => {
+        const recentHistory = history.slice(-6);
+        for (const old of recentHistory) {
+            if (newA === old.a && newB === old.b) return true;
+            if (newA === old.b && newB === old.a) return true; // Commutative
+            if ((newA + newB) === (old.a + old.b)) return true; // Same answer
+        }
+        return false;
+    };
+
+    do {
+        attempts++;
+        if (stage === 0) { // Stage 1: 2-digit plus 1-digit
+            a = Math.floor(Math.random() * 90) + 10; // 10-99
+            b = Math.floor(Math.random() * 9) + 1;  // 1-9
+        } else { // Stage 2 & 3: 2-digit plus 2-digit
+            a = Math.floor(Math.random() * 90) + 10;
+            b = Math.floor(Math.random() * 90) + 10;
+        }
+    } while (isTooSimilar(a, b) && attempts < maxAttempts);
+
     return { a, b };
 };
 
-const generateSubtractionProblem = (stage: number): { a: number, b: number } => {
+const generateSubtractionProblem = (stage: number, history: { a: number, b: number }[] = []): { a: number, b: number } => {
     let minuend, subtrahend;
-    if (stage === 0) { // Stage 1: 2-digit minus 1-digit
-        minuend = Math.floor(Math.random() * 90) + 10; // 10-99
-        subtrahend = Math.floor(Math.random() * 9) + 1; // 1-9
-    } else { // Stage 2 & 3: 2-digit minus 2-digit
-        minuend = Math.floor(Math.random() * 90) + 10;
-        subtrahend = Math.floor(Math.random() * (minuend - 9)) + 10; // ensure minuend is bigger
-    }
+    const maxAttempts = 20;
+    let attempts = 0;
 
-    if (minuend < subtrahend) { // Swap to ensure positive result
-        [minuend, subtrahend] = [subtrahend, minuend];
-    }
-    if (minuend === subtrahend) { // Avoid zero result, regenerate
-        return generateSubtractionProblem(stage);
-    }
+    const isTooSimilar = (newA: number, newB: number) => {
+        const recentHistory = history.slice(-6);
+        for (const old of recentHistory) {
+            if (newA === old.a && newB === old.b) return true;
+            if ((newA - newB) === (old.a - old.b)) return true; // Same answer
+        }
+        return false;
+    };
+
+    do {
+        attempts++;
+        if (stage === 0) { // Stage 1: 2-digit minus 1-digit
+            minuend = Math.floor(Math.random() * 90) + 10; // 10-99
+            subtrahend = Math.floor(Math.random() * 9) + 1; // 1-9
+        } else { // Stage 2 & 3: 2-digit minus 2-digit
+            minuend = Math.floor(Math.random() * 90) + 10;
+            subtrahend = Math.floor(Math.random() * (minuend - 9)) + 10; // ensure minuend is bigger
+        }
+
+        if (minuend < subtrahend) { // Swap to ensure positive result
+            [minuend, subtrahend] = [subtrahend, minuend];
+        }
+    } while ((minuend === subtrahend || isTooSimilar(minuend, subtrahend)) && attempts < maxAttempts);
 
     return { a: minuend, b: subtrahend };
 };
@@ -51,15 +81,19 @@ interface StagedDecompositionGameProps {
     topic: Topic;
     gradeId: string;
     operation: Operation;
+    isDailyChallenge?: boolean;
+    onComplete?: () => void;
+    onFailure?: () => void;
 }
 
-const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic, gradeId, operation }) => {
+const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic, gradeId, operation, isDailyChallenge, onComplete, onFailure }) => {
     const navigate = useNavigate();
     const { addCompletedExercise, incrementStreak, resetStreak, recordCompletion } = useProgressStore();
     const { setStatusBarContent, clearStatusBarContent, setHeaderContent, clearHeaderContent, isTestMode, sidebarPosition } = useUiStore();
 
     const [stageIndex, setStageIndex] = useState(0);
     const [progressInStage, setProgressInStage] = useState(0);
+    const problemHistoryRef = useRef<{ a: number, b: number }[]>([]);
     const [problem, setProblem] = useState(() => {
         if (operation === 'addition') return generateAdditionProblem(0);
         return generateSubtractionProblem(0);
@@ -74,6 +108,7 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
     const [isGameComplete, setIsGameComplete] = useState(false);
 
     const [drawingMode, setDrawingMode] = useState<'draw' | 'erase'>('draw');
+    const [showHelp, setShowHelp] = useState(false);
     const drawingCanvasRef = useRef<DrawingCanvasRef>(null);
 
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
@@ -81,9 +116,9 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
     const stageStartTimeRef = useRef<number>(0);
 
     const testStagesConfig: typeof DEFAULT_STAGES_CONFIG = [
-        { name: 'F1', total: 2 },
-        { name: 'F2', total: 2 },
-        { name: 'F3', total: 2, time: 60000 },
+        { name: '🥉', total: 2 },
+        { name: '🥈', total: 2 },
+        { name: '🥇', total: 2, time: 60000 },
     ];
 
     const stagesConfig = useMemo(() => {
@@ -96,11 +131,12 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
     const setupProblem = useCallback((currentStageIndex: number) => {
         let newProblem;
         if (operation === 'addition') {
-            newProblem = generateAdditionProblem(currentStageIndex);
+            newProblem = generateAdditionProblem(currentStageIndex, problemHistoryRef.current);
         } else {
-            newProblem = generateSubtractionProblem(currentStageIndex);
+            newProblem = generateSubtractionProblem(currentStageIndex, problemHistoryRef.current);
         }
         setProblem(newProblem);
+        problemHistoryRef.current = [...problemHistoryRef.current.slice(-10), newProblem];
 
         let correctAnswer;
         if (operation === 'addition') {
@@ -193,6 +229,10 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
 
     const handleNext = () => {
         setFeedback(null);
+        if (isDailyChallenge && onComplete) {
+            onComplete();
+            return;
+        }
         if (isGameComplete) {
             const finalStreak = useProgressStore.getState().streak;
             const stageConfig = stagesConfig[stageIndex];
@@ -200,7 +240,7 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
             if (stageConfig.time && stageStartTimeRef.current > 0) {
                 timeTaken = Date.now() - stageStartTimeRef.current;
             }
-            recordCompletion(topic.id, [], finalStreak, timeTaken);
+            recordCompletion(topic.id, [], finalStreak, timeTaken, 15);
             navigate(`/grade/${gradeId}`);
             return;
         }
@@ -232,7 +272,7 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
 
         if (isCorrect) {
             incrementStreak();
-            addCompletedExercise(`${topic.id}-${stageIndex}-${progressInStage}`);
+            addCompletedExercise(topic.id, `${topic.id}-${stageIndex}-${progressInStage}`, 15);
             const newProgress = progressInStage + 1;
 
             if (newProgress >= stagesConfig[stageIndex].total) {
@@ -248,6 +288,9 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
         } else {
             resetStreak();
             setFeedback('incorrect');
+            if (isDailyChallenge && onFailure) {
+                onFailure();
+            }
             const explainer = (
               <div className="space-y-2">
                 <p>¡No pasa nada! La respuesta correcta para {problem.a} {operation === 'addition' ? '+' : '-'} {problem.b} era <strong>{correctAnswer}</strong>.</p>
@@ -320,8 +363,15 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
 
     return (
         <div className={`w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8 ${sidebarPosition === 'left' ? 'md:flex-row-reverse' : ''}`}>
+            {showHelp && (
+                <HelpPanel 
+                    operation={operation} 
+                    gameMode="staged" 
+                    onClose={() => setShowHelp(false)} 
+                />
+            )}
             <main className="flex-grow flex flex-col relative min-w-0">
-                <HelpButton operation={operation} gameMode="staged" />
+                <HelpButton operation={operation} gameMode="staged" onClick={() => setShowHelp(!showHelp)} />
                 <div className="bg-white dark:bg-dark-surface p-4 sm:p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
                     <div className="w-full pb-2 mb-4 relative">
                         <p className="text-xl md:text-2xl font-bold text-brand-text dark:text-dark-text">{instructionText}</p>

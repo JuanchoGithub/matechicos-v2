@@ -11,9 +11,12 @@ import StepByStepCalculator from '../../components/Reasoning/StepByStepCalculato
 interface ReasoningGauntletPageProps {
     topic: Topic;
     gradeId: string;
+    isDailyChallenge?: boolean;
+    onComplete?: () => void;
+    onFailure?: () => void;
 }
 
-const ReasoningGauntletPage: React.FC<ReasoningGauntletPageProps> = ({ topic, gradeId }) => {
+const ReasoningGauntletPage: React.FC<ReasoningGauntletPageProps> = ({ topic, gradeId, isDailyChallenge, onComplete, onFailure }) => {
     const navigate = useNavigate();
     const { completedExercises, addCompletedExercise, incrementStreak, resetStreak, recordCompletion } = useProgressStore();
     const { setHeaderContent, clearHeaderContent, isTestMode } = useUiStore();
@@ -44,7 +47,7 @@ const ReasoningGauntletPage: React.FC<ReasoningGauntletPageProps> = ({ topic, gr
         if (practicePool.length === 0) {
             if (topic.exercises.length > 0) {
                 const finalStreak = useProgressStore.getState().streak;
-                recordCompletion(topic.id, topic.exercises.map(e => e.id), finalStreak);
+                recordCompletion(topic.id, topic.exercises.map(e => e.id), finalStreak, undefined, topic.exercises.length);
                 alert("¡Felicitaciones! Completaste todos los ejercicios de este tema.");
                 navigate(`/grade/${gradeId}`);
             }
@@ -111,6 +114,9 @@ const ReasoningGauntletPage: React.FC<ReasoningGauntletPageProps> = ({ topic, gr
         } else {
             // Incorrect selection, show feedback and allow user to try again
             resetStreak();
+            if (isDailyChallenge && onFailure) {
+                onFailure();
+            }
             setExplanation("¡Ojo! No elegiste los números correctos para resolver el problema. ¡Intentá de nuevo!");
             setFeedback('incorrect');
         }
@@ -135,10 +141,13 @@ const ReasoningGauntletPage: React.FC<ReasoningGauntletPageProps> = ({ topic, gr
 
         if (isCorrect) {
             setFeedback('correct');
-            addCompletedExercise(currentExercise.id);
+            addCompletedExercise(topic.id, currentExercise.id, topic.exercises.length);
             incrementStreak();
         } else {
             setFeedback('incorrect');
+            if (isDailyChallenge && onFailure) {
+                onFailure();
+            }
             setExplanation(<span dangerouslySetInnerHTML={{ __html: currentExercise.explanation }} />);
             resetStreak();
         }
@@ -146,6 +155,10 @@ const ReasoningGauntletPage: React.FC<ReasoningGauntletPageProps> = ({ topic, gr
 
     const handleModalClose = () => {
         if (feedback === 'correct') {
+            if (isDailyChallenge && onComplete) {
+                onComplete();
+                return;
+            }
             pickNextExercise();
         } else if (feedback === 'incorrect') {
             if (stage === 'calculate') {

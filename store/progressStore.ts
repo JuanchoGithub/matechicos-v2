@@ -12,7 +12,10 @@ export interface TopicStats {
     gold?: boolean;
     platinum?: boolean;
     rainbow?: boolean;
+    diamond?: boolean;
   };
+  totalSolved?: number;
+  bestTimeFor10?: number; // In milliseconds
 }
 
 export interface TopicProgress {
@@ -29,7 +32,7 @@ interface ProgressState {
   addCompletedExercise: (exerciseId: string) => void;
   incrementStreak: () => void;
   resetStreak: () => void;
-  recordCompletion: (topicId: string, exerciseIdsToClear: string[], currentStreak: number, time?: number) => void;
+  recordCompletion: (topicId: string, exerciseIdsToClear: string[], currentStreak: number, time?: number, dailyProgress?: { speed?: number; decomposition?: number; problem?: number; epic?: number; clues?: number }) => void;
   updateChallengeStats: (topicId: string, streak: number, score: number, isTrollMode: boolean, trollStageReached: number, didWin: boolean) => void;
   recordCorrectAnswerForTopic: (topicId: string, stageThreshold: number) => void;
   getTopicProgress: (topicId: string) => TopicProgress;
@@ -126,18 +129,53 @@ export const useProgressStore = create<ProgressState>()(
         });
       },
 
-      recordCompletion: (topicId, exerciseIdsToClear, currentStreak, time) => {
+      recordCompletion: (topicId, exerciseIdsToClear, currentStreak, time, dailyProgress) => {
         const currentStats = get().topicStats[topicId] || { ...initialTopicStats };
+        const newMedals = { ...(currentStats.medals || {}) };
+
+        // Medal logic for Daily Challenge
+        if (topicId === 'daily-challenge' && dailyProgress) {
+          const totalPossible = 18; // 10 speed + 5 decomposition + 1 problem + 1 epic + 1 clues
+          const totalCorrect = (dailyProgress.speed || 0) + (dailyProgress.decomposition || 0) + (dailyProgress.problem || 0) + (dailyProgress.epic || 0) + (dailyProgress.clues || 0);
+          const percentage = (totalCorrect / totalPossible) * 100;
+          
+          if (percentage >= 60) newMedals.bronze = true;
+          if (percentage >= 80) newMedals.silver = true;
+          if (percentage >= 90) newMedals.gold = true;
+          if (percentage >= 100) newMedals.diamond = true;
+        }
+
+        // Medal logic for Learn the Table
+        if (topicId.startsWith('learn-table-')) {
+          const newTotalSolved = (currentStats.totalSolved || 0) + 10; // Each session is 10
+          if (newTotalSolved >= 30) newMedals.bronze = true;
+          if (newTotalSolved >= 50) newMedals.silver = true;
+          
+          if (time !== undefined) {
+            const avgTime = time / 10;
+            if (avgTime < 2000) newMedals.gold = true;
+            if (avgTime < 1000) newMedals.diamond = true;
+          }
+          
+          currentStats.totalSolved = newTotalSolved;
+        }
+
         const newStats: TopicStats = {
+          ...currentStats,
           completions: currentStats.completions + 1,
           longestStreak: Math.max(currentStats.longestStreak, currentStreak),
           bestTime: currentStats.bestTime,
-          medals: currentStats.medals, // Preserve medals
+          medals: newMedals,
         };
 
         if (time !== undefined) {
           if (newStats.bestTime === undefined || time < newStats.bestTime) {
             newStats.bestTime = time;
+          }
+          if (topicId.startsWith('learn-table-')) {
+            if (newStats.bestTimeFor10 === undefined || time < newStats.bestTimeFor10) {
+              newStats.bestTimeFor10 = time;
+            }
           }
         }
 

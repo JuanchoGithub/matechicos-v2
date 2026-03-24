@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Topic } from '../../types';
 import { useProgressStore } from '../../store/progressStore';
@@ -10,63 +10,91 @@ import NumberPad from '../../components/NumberPad';
 import StageProgressBar from '../../components/StageProgressBar';
 import HelpButton from '../../components/HelpButton';
 import SidebarToggleButton from '../../components/SidebarToggleButton';
+import HelpPanel from '../../components/HelpPanel';
 
-const generateMultiplicationProblem = (stage: number): { a: number, b: number } => {
+const generateMultiplicationProblem = (stage: number, history: { a: number, b: number }[] = []): { a: number, b: number } => {
     let a, b;
-    // For this game, we want a 2-digit number times a 1-digit number.
-    a = Math.floor(Math.random() * 90) + 10; // 10-99
-    if (stage === 0) {
-        b = Math.floor(Math.random() * 4) + 2; // 2-5 for stage 1
-    } else {
-        b = Math.floor(Math.random() * 4) + 6; // 6-9 for stage 2 & 3
-    }
+    const maxAttempts = 20;
+    let attempts = 0;
+
+    const isTooSimilar = (newA: number, newB: number) => {
+        const recentHistory = history.slice(-6);
+        for (const old of recentHistory) {
+            if (newA === old.a && newB === old.b) return true;
+            if (newA === old.b && newB === old.a) return true; // Commutative
+            if ((newA * newB) === (old.a * old.b)) return true; // Same answer
+        }
+        return false;
+    };
+
+    do {
+        attempts++;
+        // For this game, we want a 2-digit number times a 1-digit number.
+        a = Math.floor(Math.random() * 90) + 10; // 10-99
+        if (stage === 0) {
+            b = Math.floor(Math.random() * 4) + 2; // 2-5 for stage 1
+        } else {
+            b = Math.floor(Math.random() * 4) + 6; // 6-9 for stage 2 & 3
+        }
+    } while (isTooSimilar(a, b) && attempts < maxAttempts);
+
     return { a, b };
 };
 
 interface MultiplicationDecompositionGameProps {
     topic: Topic;
     gradeId: string;
+    isDailyChallenge?: boolean;
+    onComplete?: () => void;
+    onFailure?: () => void;
 }
 
-const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameProps> = ({ topic, gradeId }) => {
+const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameProps> = ({ topic, gradeId, isDailyChallenge, onComplete, onFailure }) => {
     const navigate = useNavigate();
     const { addCompletedExercise, incrementStreak, resetStreak, recordCompletion } = useProgressStore();
     const { setHeaderContent, clearHeaderContent, isTestMode, sidebarPosition } = useUiStore();
 
     const [stageIndex, setStageIndex] = useState(0);
     const [progressInStage, setProgressInStage] = useState(0);
+    const problemHistoryRef = useRef<{ a: number, b: number }[]>([]);
     const [problem, setProblem] = useState(() => generateMultiplicationProblem(0));
 
-    const [currentStep, setCurrentStep] = useState(0); // 0: units, 1: tens, 2: final sum
+    const [currentStep, setCurrentStep] = useState(0); // 0: units, 1: tens digit, 2: tens final, 3: final sum
     const [unitsAnswer, setUnitsAnswer] = useState('');
+    const [tensDigitAnswer, setTensDigitAnswer] = useState('');
     const [tensAnswer, setTensAnswer] = useState('');
     const [decomposedFinalAnswer, setDecomposedFinalAnswer] = useState<string[]>([]);
     const [activeFinalDigitIndex, setActiveFinalDigitIndex] = useState(0);
 
     const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
     const [explanation, setExplanation] = useState<React.ReactNode | null>(null);
+    const [showHelp, setShowHelp] = useState(false);
     const [isGameComplete, setIsGameComplete] = useState(false);
 
-    const { num1, num1Units, num1Tens, num2 } = useMemo(() => {
+    const { num1, num1Units, num1Tens, num1TensDigit, num2 } = useMemo(() => {
         const n1 = problem.a;
         const n2 = problem.b;
         return {
             num1: n1,
             num1Units: n1 % 10,
             num1Tens: Math.floor(n1 / 10) * 10,
+            num1TensDigit: Math.floor(n1 / 10),
             num2: n2,
         };
     }, [problem]);
 
     const correctUnitsAnswer = num1Units * num2;
+    const correctTensDigitAnswer = num1TensDigit * num2;
     const correctTensAnswer = num1Tens * num2;
     const correctFinalAnswer = problem.a * problem.b;
 
     const setupProblem = useCallback((currentStageIndex: number) => {
-        const newProblem = generateMultiplicationProblem(currentStageIndex);
+        const newProblem = generateMultiplicationProblem(currentStageIndex, problemHistoryRef.current);
         setProblem(newProblem);
+        problemHistoryRef.current = [...problemHistoryRef.current.slice(-10), newProblem];
         setCurrentStep(0);
         setUnitsAnswer('');
+        setTensDigitAnswer('');
         setTensAnswer('');
         setDecomposedFinalAnswer([]);
         setFeedback(null);
@@ -78,7 +106,7 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
     }, [stageIndex, setupProblem]);
     
     useEffect(() => {
-        if (currentStep === 2) {
+        if (currentStep === 3) {
             const answerLength = String(correctFinalAnswer).length;
             setDecomposedFinalAnswer(Array(answerLength).fill(''));
             setActiveFinalDigitIndex(answerLength - 1);
@@ -99,8 +127,12 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
 
     const handleNextProblem = () => {
         setFeedback(null);
+        if (isDailyChallenge && onComplete) {
+            onComplete();
+            return;
+        }
         if (isGameComplete) {
-            recordCompletion(topic.id, [], useProgressStore.getState().streak);
+            recordCompletion(topic.id, [], useProgressStore.getState().streak, undefined, 15);
             navigate(`/grade/${gradeId}`);
             return;
         }
@@ -132,8 +164,10 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
         if (currentStep === 0) {
             isStepCorrect = parseInt(unitsAnswer, 10) === correctUnitsAnswer;
         } else if (currentStep === 1) {
-            isStepCorrect = parseInt(tensAnswer, 10) === correctTensAnswer;
+            isStepCorrect = parseInt(tensDigitAnswer, 10) === correctTensDigitAnswer;
         } else if (currentStep === 2) {
+            isStepCorrect = parseInt(tensAnswer, 10) === correctTensAnswer;
+        } else if (currentStep === 3) {
             const finalAnswerNumber = parseInt(decomposedFinalAnswer.join(''), 10);
             isStepCorrect = finalAnswerNumber === correctFinalAnswer;
         }
@@ -143,10 +177,10 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
         }
 
         if (isStepCorrect) {
-            if (currentStep === 2) {
+            if (currentStep === 3) {
                 // Problem complete
                 incrementStreak();
-                addCompletedExercise(`${topic.id}-${stageIndex}-${progressInStage}`);
+                addCompletedExercise(topic.id, `${topic.id}-${stageIndex}-${progressInStage}`, 15);
                 setFeedback('correct');
             } else {
                 setCurrentStep(prev => prev + 1);
@@ -154,12 +188,17 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
         } else {
             resetStreak();
             setFeedback('incorrect');
+            if (isDailyChallenge && onFailure) {
+                onFailure();
+            }
             let explainerText = '';
             if (currentStep === 0) {
                 explainerText = `La respuesta correcta para ${num1Units} × ${num2} era ${correctUnitsAnswer}.`;
             } else if (currentStep === 1) {
-                explainerText = `La respuesta correcta para ${num1Tens} × ${num2} era ${correctTensAnswer}.`;
+                explainerText = `La respuesta correcta para ${num1TensDigit} × ${num2} era ${correctTensDigitAnswer}.`;
             } else if (currentStep === 2) {
+                explainerText = `La respuesta correcta para ${correctTensDigitAnswer} × 10 era ${correctTensAnswer}.`;
+            } else if (currentStep === 3) {
                 explainerText = `La suma final de ${correctTensAnswer} + ${correctUnitsAnswer} daba ${correctFinalAnswer}.`;
             }
             const explainer = (
@@ -176,8 +215,10 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
         if (currentStep === 0) {
             setUnitsAnswer(prev => (prev.length < 4 ? prev + num : prev));
         } else if (currentStep === 1) {
-            setTensAnswer(prev => (prev.length < 4 ? prev + num : prev));
+            setTensDigitAnswer(prev => (prev.length < 4 ? prev + num : prev));
         } else if (currentStep === 2) {
+            setTensAnswer(prev => (prev.length < 4 ? prev + num : prev));
+        } else if (currentStep === 3) {
             const newAnswer = [...decomposedFinalAnswer];
             if (activeFinalDigitIndex >= 0 && activeFinalDigitIndex < newAnswer.length) {
                 newAnswer[activeFinalDigitIndex] = num;
@@ -191,8 +232,10 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
         if (currentStep === 0) {
             setUnitsAnswer(prev => prev.slice(0, -1));
         } else if (currentStep === 1) {
-            setTensAnswer(prev => prev.slice(0, -1));
+            setTensDigitAnswer(prev => prev.slice(0, -1));
         } else if (currentStep === 2) {
+            setTensAnswer(prev => prev.slice(0, -1));
+        } else if (currentStep === 3) {
             const newAnswer = [...decomposedFinalAnswer];
             if (activeFinalDigitIndex >= 0 && activeFinalDigitIndex < newAnswer.length) {
                 if (newAnswer[activeFinalDigitIndex] !== '') {
@@ -209,8 +252,9 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
 
     const isSubmitDisabled =
         (currentStep === 0 && unitsAnswer === '') ||
-        (currentStep === 1 && tensAnswer === '') ||
-        (currentStep === 2 && decomposedFinalAnswer.some(d => d === ''));
+        (currentStep === 1 && tensDigitAnswer === '') ||
+        (currentStep === 2 && tensAnswer === '') ||
+        (currentStep === 3 && decomposedFinalAnswer.some(d => d === ''));
 
     const renderDecompositionSum = () => {
         const num1Str = tensAnswer;
@@ -249,8 +293,15 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
 
     return (
         <div className={`w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8 ${sidebarPosition === 'left' ? 'md:flex-row-reverse' : ''}`}>
-            <main className="flex-grow flex flex-col relative">
-                <HelpButton operation="multiplication" gameMode="multiplication-decomposition" />
+            {showHelp && (
+                <HelpPanel 
+                    operation="multiplication" 
+                    gameMode="multiplication-decomposition" 
+                    onClose={() => setShowHelp(false)} 
+                />
+            )}
+            <main className="flex-grow flex flex-col relative min-w-0">
+                <HelpButton operation="multiplication" gameMode="multiplication-decomposition" onClick={() => setShowHelp(!showHelp)} />
                 <div className="bg-white dark:bg-dark-surface p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
                     <div className="flex-grow flex flex-col items-center justify-center font-mono text-xl sm:text-2xl md:text-3xl lg:text-4xl space-y-4 md:space-y-6">
                         {/* Problem statement */}
@@ -287,17 +338,25 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
                                 </div>
                             </div>
 
-                            {/* Tens Step */}
+                            {/* Tens Digit Step */}
                             <div className="flex items-center justify-between transition-opacity duration-500" style={{ opacity: currentStep >= 1 ? 1 : 0.3 }}>
-                                <span className="text-brand-primary dark:text-dark-primary">{num1Tens} × {num2} =</span>
+                                <span className="text-brand-primary dark:text-dark-primary">{num1TensDigit} × {num2} =</span>
                                 <div className="flex items-center gap-2">
-                                    <input type="text" readOnly value={tensAnswer} placeholder="?" className={`w-28 text-center font-bold p-2 rounded-lg border-2 ${currentStep === 1 ? 'border-brand-primary dark:border-dark-primary' : 'border-gray-200 dark:border-dark-subtle'} bg-gray-100 dark:bg-dark-subtle`} />
+                                    <input type="text" readOnly value={tensDigitAnswer} placeholder="?" className={`w-28 text-center font-bold p-2 rounded-lg border-2 ${currentStep === 1 ? 'border-brand-primary dark:border-dark-primary' : 'border-gray-200 dark:border-dark-subtle'} bg-gray-100 dark:bg-dark-subtle`} />
+                                </div>
+                            </div>
+
+                            {/* Tens Final Step */}
+                            <div className="flex items-center justify-between transition-opacity duration-500" style={{ opacity: currentStep >= 2 ? 1 : 0.3 }}>
+                                <span className="text-brand-primary dark:text-dark-primary">{tensDigitAnswer || '?'} × 10 =</span>
+                                <div className="flex items-center gap-2">
+                                    <input type="text" readOnly value={tensAnswer} placeholder="?" className={`w-28 text-center font-bold p-2 rounded-lg border-2 ${currentStep === 2 ? 'border-brand-primary dark:border-dark-primary' : 'border-gray-200 dark:border-dark-subtle'} bg-gray-100 dark:bg-dark-subtle`} />
                                 </div>
                             </div>
 
 
                             {/* Final Sum Step */}
-                            <div className="pt-4 mt-4 border-t-4 border-dashed transition-opacity duration-500" style={{ opacity: currentStep >= 2 ? 1 : 0.3 }}>
+                            <div className="pt-4 mt-4 border-t-4 border-dashed transition-opacity duration-500" style={{ opacity: currentStep >= 3 ? 1 : 0.3 }}>
                                 <p className="text-lg text-center mb-2">Ahora sumamos los resultados:</p>
                                 <div className="flex items-center justify-center relative pr-10">
                                      {renderDecompositionSum()}

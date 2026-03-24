@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Topic } from '../../types';
 import { useProgressStore } from '../../store/progressStore';
@@ -10,38 +10,68 @@ import NumberPad from '../../components/NumberPad';
 import StageProgressBar from '../../components/StageProgressBar';
 import HelpButton from '../../components/HelpButton';
 import SidebarToggleButton from '../../components/SidebarToggleButton';
+import HelpPanel from '../../components/HelpPanel';
 
 
-const generateDivisionProblem = (stage: number): { a: number, b: number } => {
-    const divisor = stage === 0 
-        ? (Math.floor(Math.random() * 4) + 2) // 2-5
-        : (Math.floor(Math.random() * 8) + 2); // 2-9
+const generateDivisionProblem = (stage: number, history: { a: number, b: number }[] = []): { a: number, b: number } => {
+    let a, b;
+    const maxAttempts = 20;
+    let attempts = 0;
 
-    let dividend;
-    // We want a 2-digit dividend and a 2-digit quotient, and no remainder.
+    const isTooSimilar = (newA: number, newB: number) => {
+        const recentHistory = history.slice(-6);
+        for (const old of recentHistory) {
+            if (newA === old.a && newB === old.b) return true;
+            if ((newA / newB) === (old.a / old.b)) return true; // Same answer
+        }
+        return false;
+    };
+
     do {
+        attempts++;
+        const divisor = stage === 0 
+            ? (Math.floor(Math.random() * 4) + 2) // 2-5
+            : (Math.floor(Math.random() * 8) + 2); // 2-9
+
+        let dividend;
+        // We want a 2-digit dividend and a 2-digit quotient, and no remainder.
         const quotient = Math.floor(Math.random() * 89) + 10; // 10-98
         dividend = divisor * quotient;
-    } while (dividend > 99 || dividend < 10); // Ensure dividend is 2 digits
+        
+        if (dividend <= 99 && dividend >= 10) {
+            a = dividend;
+            b = divisor;
+        } else {
+            // If dividend is out of range, we'll try again in the next iteration
+            continue;
+        }
+    } while ((!a || isTooSimilar(a, b)) && attempts < maxAttempts);
 
-    return { a: dividend, b: divisor };
+    // Fallback if loop fails
+    if (!a) return { a: 24, b: 2 };
+
+    return { a, b };
 };
 
 interface DivisionDecompositionGameProps {
     topic: Topic;
     gradeId: string;
+    isDailyChallenge?: boolean;
+    onComplete?: () => void;
+    onFailure?: () => void;
 }
 
 const highlightColor1 = 'bg-sky-200 dark:bg-sky-800';
 const highlightColor2 = 'bg-lime-200 dark:bg-lime-800';
 
-const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ topic, gradeId }) => {
+const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ topic, gradeId, isDailyChallenge, onComplete, onFailure }) => {
     const navigate = useNavigate();
     const { addCompletedExercise, incrementStreak, resetStreak, recordCompletion } = useProgressStore();
     const { setHeaderContent, clearHeaderContent, isTestMode, sidebarPosition } = useUiStore();
 
     const [stageIndex, setStageIndex] = useState(0);
     const [progressInStage, setProgressInStage] = useState(0);
+    const problemHistoryRef = useRef<{ a: number, b: number }[]>([]);
     const [problem, setProblem] = useState(() => generateDivisionProblem(0));
 
     // 0:q1, 1:p1, 2:r1, 3:q2, 4:p2, 5:r2, 6:final answer
@@ -57,7 +87,7 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
     const [quotient2, setQuotient2] = useState<number | null>(null);
     const [product2, setProduct2] = useState<number | null>(null);
     const [finalRemainder, setFinalRemainder] = useState<number | null>(null);
-
+    const [showHelp, setShowHelp] = useState(false);
     const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
     const [explanation, setExplanation] = useState<React.ReactNode | null>(null);
     const [isGameComplete, setIsGameComplete] = useState(false);
@@ -148,8 +178,9 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
     }, []);
 
     const setupProblem = useCallback((currentStageIndex: number) => {
-        const newProblem = generateDivisionProblem(currentStageIndex);
+        const newProblem = generateDivisionProblem(currentStageIndex, problemHistoryRef.current);
         setProblem(newProblem);
+        problemHistoryRef.current = [...problemHistoryRef.current.slice(-10), newProblem];
         resetProblemState();
     }, [resetProblemState]);
     
@@ -188,8 +219,12 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
 
     const handleNextProblem = () => {
         setFeedback(null);
+        if (isDailyChallenge && onComplete) {
+            onComplete();
+            return;
+        }
         if (isGameComplete) {
-            recordCompletion(topic.id, [], useProgressStore.getState().streak);
+            recordCompletion(topic.id, [], useProgressStore.getState().streak, undefined, 15);
             navigate(`/grade/${gradeId}`);
             return;
         }
@@ -227,7 +262,7 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
 
             if (isCorrect) {
                 incrementStreak();
-                addCompletedExercise(`${topic.id}-${stageIndex}-${progressInStage}`);
+                addCompletedExercise(topic.id, `${topic.id}-${stageIndex}-${progressInStage}`, 15);
                 setFeedback('correct');
             } else {
                 handleIncorrect();
@@ -284,6 +319,9 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
     const handleIncorrect = () => {
         resetStreak();
         setFeedback('incorrect');
+        if (isDailyChallenge && onFailure) {
+            onFailure();
+        }
         let correctValue;
         switch (step) {
             case 0: correctValue = correctQuotient1; break;
@@ -377,8 +415,15 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
 
     return (
         <div className={`w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8 ${sidebarPosition === 'left' ? 'md:flex-row-reverse' : ''}`}>
-            <main className="flex-grow flex flex-col relative">
-                <HelpButton operation="division" gameMode="division-decomposition" />
+            {showHelp && (
+                <HelpPanel 
+                    operation="division" 
+                    gameMode="division-decomposition" 
+                    onClose={() => setShowHelp(false)} 
+                />
+            )}
+            <main className="flex-grow flex flex-col relative min-w-0">
+                <HelpButton operation="division" gameMode="division-decomposition" onClick={() => setShowHelp(!showHelp)} />
                 <div className="bg-white dark:bg-dark-surface p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col flex-grow">
                     
                     {/* Interactive prompt */}

@@ -5,7 +5,7 @@ export const grades: Grade[] = [
   {
     id: 'grade-3',
     level: 3,
-    name: '3er Grado',
+    name: 'Todos los ejercicios',
     topics: grade3Topics,
   },
 ];

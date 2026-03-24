@@ -11,6 +11,9 @@ import StatusBar from './components/StatusBar';
 import { useUiStore } from './store/uiStore';
 import MedalAnimationOverlay from './components/MedalAnimationOverlay';
 
+import DailyChallengePage from './pages/DailyChallengePage';
+import LearnTablesPage from './pages/LearnTablesPage';
+
 // We need a wrapper component to use react-router hooks
 const AppContent: React.FC = () => {
   const navigate = useNavigate();
@@ -73,6 +76,8 @@ const AppContent: React.FC = () => {
           <Route path="/grade/:gradeId/challenge/:topicId" element={<ChallengePage />} />
           <Route path="/tutorial/:operation/:gameMode?" element={<TutorialPage />} />
           <Route path="/parents" element={<ParentsPage />} />
+          <Route path="/daily-challenge" element={<DailyChallengePage />} />
+          <Route path="/learn-tables" element={<LearnTablesPage />} />
         </Routes>
       </main>
       <StatusBar />
