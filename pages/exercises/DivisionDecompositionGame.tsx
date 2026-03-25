@@ -74,7 +74,7 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
     const problemHistoryRef = useRef<{ a: number, b: number }[]>([]);
     const [problem, setProblem] = useState(() => generateDivisionProblem(0));
 
-    // 0:q1, 1:p1, 2:r1, 3:q2, 4:p2, 5:r2, 6:final answer
+    const [showIntro, setShowIntro] = useState(true);
     const [step, setStep] = useState(0); 
     const [userInput, setUserInput] = useState('');
     const [finalQuotientInput, setFinalQuotientInput] = useState<string[]>(['', '']);
@@ -175,6 +175,7 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
         setFinalRemainder(null);
         setFeedback(null);
         setExplanation(null);
+        setShowIntro(true);
     }, []);
 
     const setupProblem = useCallback((currentStageIndex: number) => {
@@ -416,6 +417,56 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
         (step < 6 && userInput === '') || 
         (step === 6 && finalQuotientInput.some(d => d === '')) ||
         feedback === 'correct';
+
+    if (showIntro) {
+        return (
+            <div className="flex-grow flex items-center justify-center p-4">
+                <div className="bg-white dark:bg-dark-surface p-8 md:p-12 rounded-3xl shadow-2xl max-w-2xl w-full text-center animate-fade-in border-2 border-brand-primary/20 dark:border-dark-primary/20">
+                    <div className="mb-8">
+                        <div className="inline-block p-4 bg-brand-primary/10 dark:bg-dark-primary/10 rounded-full mb-4">
+                            <span className="text-5xl">➗</span>
+                        </div>
+                        <h2 className="text-3xl md:text-4xl font-black text-brand-primary dark:text-dark-primary mb-4">Nueva División</h2>
+                        <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-300">
+                            Vamos a dividir <span className="font-bold text-brand-secondary dark:text-dark-secondary">{dividend} ÷ {divisor}</span>
+                        </p>
+                    </div>
+
+                    <div className="bg-gray-50 dark:bg-dark-subtle/30 p-8 rounded-2xl mb-10 border-2 border-dashed border-gray-200 dark:border-dark-subtle">
+                        <p className="text-lg text-gray-600 dark:text-gray-400 mb-6 font-medium italic">
+                            Lo representaremos así para resolverlo paso a paso:
+                        </p>
+                        
+                        <div className="flex justify-center scale-125 md:scale-150 py-4">
+                            <div className="relative font-mono text-4xl" style={{ width: '12rem', height: '6rem' }}>
+                                 {/* Divisor */}
+                                 <div className="absolute top-6 right-32 text-brand-primary dark:text-dark-primary font-bold">
+                                    <Digit>{divisor}</Digit>
+                                </div>
+                                
+                                {/* Division Symbol */}
+                                <div className="absolute top-6 right-28 h-12 border-l-4 border-black dark:border-dark-text"></div>
+                                <div className="absolute top-4 right-8 w-20 border-b-4 border-black dark:border-dark-text"></div>
+
+                                {/* Dividend */}
+                                <div className="absolute top-6 right-8 w-20 text-right font-bold">
+                                    <Digit>{dividendStr[0]}</Digit>
+                                    <Digit>{dividendStr[1]}</Digit>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <Button 
+                        onClick={() => setShowIntro(false)} 
+                        className="w-full md:w-auto px-16 py-5 text-2xl font-bold shadow-xl hover:scale-105 transition-transform"
+                    >
+                        ¡Empecemos!
+                    </Button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className={`w-full flex-grow flex flex-col md:flex-row gap-2 md:gap-8 ${sidebarPosition === 'left' ? 'md:flex-row-reverse' : ''}`}>
