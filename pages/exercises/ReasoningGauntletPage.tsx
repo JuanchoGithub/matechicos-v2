@@ -48,7 +48,6 @@ const ReasoningGauntletPage: React.FC<ReasoningGauntletPageProps> = ({ topic, gr
             if (topic.exercises.length > 0) {
                 const finalStreak = useProgressStore.getState().streak;
                 recordCompletion(topic.id, topic.exercises.map(e => e.id), finalStreak, undefined, topic.exercises.length);
-                alert("¡Felicitaciones! Completaste todos los ejercicios de este tema.");
                 navigate(`/grade/${gradeId}`);
             }
             return;
@@ -65,11 +64,15 @@ const ReasoningGauntletPage: React.FC<ReasoningGauntletPageProps> = ({ topic, gr
     }, [topic.id]);
 
     useEffect(() => {
+        if (isDailyChallenge) return;
+        
         if (currentExercise) {
             setHeaderContent(<h1 className="text-xl md:text-2xl font-bold text-white tracking-wider">{topic.name}</h1>);
         }
-        return () => clearHeaderContent();
-    }, [topic.name, currentExercise, setHeaderContent, clearHeaderContent]);
+        return () => {
+            if (!isDailyChallenge) clearHeaderContent();
+        };
+    }, [topic.name, currentExercise, setHeaderContent, clearHeaderContent, isDailyChallenge]);
     
     const translatableNumbers = useMemo(() =>
         selectedNumbers.filter((n): n is TranslatableNumberInText => 'prompt' in n),
@@ -141,7 +144,7 @@ const ReasoningGauntletPage: React.FC<ReasoningGauntletPageProps> = ({ topic, gr
 
         if (isCorrect) {
             setFeedback('correct');
-            addCompletedExercise(topic.id, currentExercise.id, topic.exercises.length);
+            addCompletedExercise(currentExercise.id);
             incrementStreak();
         } else {
             setFeedback('incorrect');

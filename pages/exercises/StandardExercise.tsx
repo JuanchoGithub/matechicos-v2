@@ -179,6 +179,8 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId, isD
     }, [currentExercise]);
 
     useEffect(() => {
+        if (isDailyChallenge) return;
+        
         if (currentExercise) {
             let headerContent;
             if (isProgressiveWordProblem) {
@@ -211,8 +213,10 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId, isD
             }
             setHeaderContent(headerContent);
         }
-        return () => clearHeaderContent();
-    }, [topic.name, currentExercise, setHeaderContent, clearHeaderContent, isProgressiveWordProblem, isEpicProblem, topicProgress.stage, topicProgress.correctInStage]);
+        return () => {
+            if (!isDailyChallenge) clearHeaderContent();
+        };
+    }, [topic.name, currentExercise, setHeaderContent, clearHeaderContent, isProgressiveWordProblem, isEpicProblem, topicProgress.stage, topicProgress.correctInStage, isDailyChallenge]);
 
     useEffect(() => {
         if (isEpicProblem) {
@@ -504,7 +508,7 @@ const StandardExercise: React.FC<StandardExerciseProps> = ({ topic, gradeId, isD
                 }
             </main>
             <aside className="w-full md:max-w-sm flex-shrink-0">
-                <div className="relative bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col h-full">
+                <div className="relative bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col">
                     <SidebarToggleButton />
                     <div className="flex-grow flex flex-col justify-center">{renderSidebarContent()}</div>
                     {showSubmitButton && <Button onClick={handleAnswerSubmit} disabled={!userAnswer} className="w-full mt-4">{SUBMIT_BUTTON}</Button>}

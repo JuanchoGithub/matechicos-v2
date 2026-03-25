@@ -194,6 +194,8 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
 
     // Header Progress Bar Effect
     useEffect(() => {
+        if (isDailyChallenge) return;
+        
         const header = (
             <StageProgressBar
                 stages={stagesConfig}
@@ -202,8 +204,10 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
             />
         );
         setHeaderContent(header);
-        return () => clearHeaderContent();
-    }, [stageIndex, progressInStage, setHeaderContent, clearHeaderContent, stagesConfig]);
+        return () => {
+            if (!isDailyChallenge) clearHeaderContent();
+        };
+    }, [stageIndex, progressInStage, setHeaderContent, clearHeaderContent, stagesConfig, isDailyChallenge]);
 
     // Status Bar Controls Effect
     useEffect(() => {
@@ -394,7 +398,7 @@ const StagedDecompositionGame: React.FC<StagedDecompositionGameProps> = ({ topic
             </main>
 
             <aside className="w-full md:max-w-sm flex-shrink-0">
-                <div className="relative bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm p-4 md:p-6 rounded-3xl shadow-lg flex flex-col h-full">
+                <div className="relative bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm p-4 md:p-6 rounded-3xl shadow-lg flex flex-col">
                     <SidebarToggleButton />
                     <div className="flex-grow flex flex-col justify-center">
                         <NumberPad onNumberClick={handleNumberPadClick} onDeleteClick={handleDeleteClick} />

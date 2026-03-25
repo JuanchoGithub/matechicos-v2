@@ -40,19 +40,43 @@ const DailyChallengePage: React.FC = () => {
 
     useEffect(() => {
         const hearts = Array.from({ length: 3 }).map((_, i) => (
-            <span key={i} className={`text-2xl transition-opacity duration-300 ${i < lives ? 'opacity-100' : 'opacity-20'}`}>❤️</span>
+            <span key={i} className={`text-xl md:text-2xl transition-opacity duration-300 ${i < lives ? 'opacity-100' : 'opacity-20'}`}>❤️</span>
+        ));
+
+        const sectionIcon = step === 'speed' ? '⚡' : step === 'decomposition' ? '🧩' : step === 'problem' ? '🧠' : step === 'epic' ? '🦸‍♂️' : '🕵️‍♀️';
+        const sectionName = step === 'speed' ? 'Velocidad' : step === 'decomposition' ? 'Descomposición' : step === 'problem' ? 'Problema' : step === 'epic' ? 'Épico' : 'Pistas';
+        const totalDots = step === 'speed' ? 10 : step === 'decomposition' ? 5 : 1;
+
+        const progressDots = Array.from({ length: totalDots }).map((_, i) => (
+            <div 
+                key={i} 
+                className={`h-1.5 w-3 md:w-4 rounded-full transition-colors ${i < currentIteration - 1 ? 'bg-green-400' : i === currentIteration - 1 ? 'bg-white animate-pulse' : 'bg-white/30'}`}
+            />
         ));
 
         setHeaderContent(
-            <div className="flex justify-between items-center w-full">
-                <h1 className="text-xl md:text-2xl font-bold text-white tracking-wider">Desafío Diario</h1>
-                <div className="flex gap-1 bg-black/20 px-3 py-1 rounded-full">
-                    {hearts}
+            <div className="flex flex-col md:flex-row md:items-center justify-between w-full gap-0.5 md:gap-4 pointer-events-auto">
+                <div className="flex items-center gap-2">
+                    <h1 className="text-sm md:text-lg font-bold text-white tracking-tight whitespace-nowrap hidden sm:block">Desafío Diario</h1>
+                    <div className="h-4 w-px bg-white/30 hidden md:block" />
+                    <div className="flex items-center gap-1.5 text-white/90">
+                        <span className="text-base md:text-lg">{sectionIcon}</span>
+                        <span className="text-[10px] md:text-sm font-bold uppercase tracking-wider">{sectionName}</span>
+                    </div>
+                </div>
+                
+                <div className="flex items-center gap-2 md:gap-6">
+                    <div className="flex gap-0.5 md:gap-1">
+                        {progressDots}
+                    </div>
+                    <div className="flex gap-0.5 bg-black/20 px-1.5 py-0.5 rounded-full">
+                        {hearts}
+                    </div>
                 </div>
             </div>
         );
         return () => clearHeaderContent();
-    }, [setHeaderContent, clearHeaderContent, lives]);
+    }, [setHeaderContent, clearHeaderContent, lives, step, currentIteration]);
 
     const handleNextIteration = () => {
         const newTotalCorrect = totalCorrect + 1;
@@ -192,29 +216,11 @@ const DailyChallengePage: React.FC = () => {
     }
 
     return (
-        <div className="flex flex-col h-full">
-            <div className="flex justify-between items-center mb-4 bg-white/50 dark:bg-black/20 p-3 rounded-xl backdrop-blur-sm">
-                <div className="flex items-center gap-2">
-                    <span className="text-2xl">
-                        {step === 'speed' ? '⚡' : step === 'decomposition' ? '🧩' : step === 'problem' ? '🧠' : step === 'epic' ? '🦸‍♂️' : '🕵️‍♀️'}
-                    </span>
-                    <span className="font-bold text-lg">
-                        {step === 'speed' ? 'Velocidad' : step === 'decomposition' ? 'Descomposición' : step === 'problem' ? 'Problema' : step === 'epic' ? 'Épico' : 'Pistas'}
-                    </span>
-                </div>
-                <div className="flex gap-1">
-                    {Array.from({ length: step === 'speed' ? 10 : step === 'decomposition' ? 5 : 1 }).map((_, i) => (
-                        <div 
-                            key={i} 
-                            className={`h-2 w-4 rounded-full transition-colors ${i < currentIteration - 1 ? 'bg-green-500' : i === currentIteration - 1 ? 'bg-brand-primary animate-pulse' : 'bg-gray-300 dark:bg-gray-700'}`}
-                        />
-                    ))}
-                </div>
-            </div>
-
-            <div className="flex-grow flex flex-col">
+        <div className="flex flex-col pb-48">
+            <div className="flex flex-col">
                 {step === 'speed' && (
                     <DailySpeedChallenge 
+                        key={`speed-${currentIteration}`}
                         onComplete={handleNextIteration} 
                         onFailure={handleFailure}
                         topics={speedTopics}
@@ -223,6 +229,7 @@ const DailyChallengePage: React.FC = () => {
                 )}
                 {step === 'decomposition' && (
                     <DailyDecompositionChallenge 
+                        key={`decomp-${currentIteration}`}
                         onComplete={handleNextIteration} 
                         onFailure={handleFailure}
                         topics={decompositionTopics}
@@ -230,6 +237,7 @@ const DailyChallengePage: React.FC = () => {
                 )}
                 {step === 'problem' && (
                     <DailyStandardChallenge 
+                        key={`problem-${currentIteration}`}
                         onComplete={handleNextIteration} 
                         onFailure={handleFailure}
                         topics={problemTopics}
@@ -238,6 +246,7 @@ const DailyChallengePage: React.FC = () => {
                 )}
                 {step === 'epic' && (
                     <DailyStandardChallenge 
+                        key={`epic-${currentIteration}`}
                         onComplete={handleNextIteration} 
                         onFailure={handleFailure}
                         topics={epicTopics}
@@ -246,6 +255,7 @@ const DailyChallengePage: React.FC = () => {
                 )}
                 {step === 'clues' && (
                     <DailyCluesChallenge 
+                        key={`clues-${currentIteration}`}
                         onComplete={handleNextIteration} 
                         onFailure={handleFailure}
                         topics={cluesTopics}
@@ -262,9 +272,13 @@ const DailySpeedChallenge: React.FC<{ onComplete: () => void; onFailure: () => v
     const [problem, setProblem] = useState<{ a: number; b: number; answer: number; op: string }>({ a: 0, b: 0, answer: 0, op: '+' });
     const [userAnswer, setUserAnswer] = useState('');
     const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
+    const [pressedKey, setPressedKey] = useState<string | null>(null);
 
     const generateProblem = useCallback(() => {
+        if (!topics || topics.length === 0) return;
         const topic = topics[Math.floor(Math.random() * topics.length)];
+        if (!topic) return;
+        
         let a, b, answer, op;
         
         switch (topic.challengeType) {
@@ -304,42 +318,87 @@ const DailySpeedChallenge: React.FC<{ onComplete: () => void; onFailure: () => v
         generateProblem();
     }, [generateProblem]);
 
-    const handleAnswer = (val: string) => {
-        if (feedback) return;
-        const newAnswer = userAnswer + val;
-        setUserAnswer(newAnswer);
-        
-        if (newAnswer.length >= String(problem.answer).length) {
-            if (parseInt(newAnswer) === problem.answer) {
-                setFeedback('correct');
-                setTimeout(onComplete, 600);
-            } else {
-                setFeedback('incorrect');
-                onFailure();
-                setTimeout(generateProblem, 1000);
-            }
+    useEffect(() => {
+        if (feedback === 'correct') {
+            const timer = setTimeout(onComplete, 600);
+            return () => clearTimeout(timer);
         }
-    };
+    }, [feedback, onComplete]);
+
+    const handleAnswer = useCallback((val: string) => {
+        if (feedback) return;
+        setUserAnswer(prev => {
+            const newAnswer = prev + val;
+            if (newAnswer.length >= String(problem.answer).length) {
+                if (parseInt(newAnswer) === problem.answer) {
+                    setFeedback('correct');
+                } else {
+                    setFeedback('incorrect');
+                    onFailure();
+                    setTimeout(generateProblem, 1000);
+                }
+            }
+            return newAnswer;
+        });
+    }, [feedback, problem.answer, onFailure, generateProblem]);
+
+    const handleDelete = useCallback(() => {
+        if (feedback) return;
+        setUserAnswer(prev => prev.slice(0, -1));
+    }, [feedback]);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key >= '0' && e.key <= '9') {
+                setPressedKey(e.key);
+                handleAnswer(e.key);
+            } else if (e.key === 'Backspace') {
+                setPressedKey('Backspace');
+                handleDelete();
+            }
+        };
+
+        const handleKeyUp = (e: KeyboardEvent) => {
+            setPressedKey(prev => prev === e.key ? null : prev);
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
+    }, [handleAnswer, handleDelete]);
 
     return (
-        <div className={`w-full flex-grow flex flex-col md:flex-row gap-4 md:gap-8 ${sidebarPosition === 'left' ? 'md:flex-row-reverse' : ''}`}>
-            <main className="flex-grow flex flex-col relative min-w-0">
-                <div className="bg-white dark:bg-dark-surface p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col flex-grow items-center justify-center">
-                    <div className={`text-8xl font-black transition-all duration-300 mb-8 ${feedback === 'correct' ? 'scale-110 text-green-500' : feedback === 'incorrect' ? 'animate-shake text-red-500' : ''}`}>
-                        {problem.a} {problem.op} {problem.b}
-                    </div>
-                    <div className="text-6xl font-mono bg-gray-100 dark:bg-dark-subtle px-8 py-4 rounded-2xl shadow-inner min-w-[200px] text-center">
-                        {userAnswer || '?'}
+        <div className={`w-full flex flex-col md:flex-row gap-4 md:gap-8 ${sidebarPosition === 'left' ? 'md:flex-row-reverse' : ''}`}>
+            <main className="flex flex-col relative min-w-0">
+                <div className={`bg-white dark:bg-dark-surface p-6 md:p-8 rounded-3xl shadow-2xl text-center flex flex-col relative transition-all duration-300 min-h-[300px]`}>
+                    <div className="flex-grow flex flex-col items-center justify-center">
+                        <div className={`my-6 min-h-[100px] relative flex items-center justify-center transition-all duration-300 ${feedback === 'correct' ? 'scale-110 text-green-500' : feedback === 'incorrect' ? 'animate-shake text-red-500' : ''}`}>
+                            <span className="text-6xl sm:text-8xl font-extrabold tracking-wider">{problem.a} {problem.op} {problem.b}</span>
+                        </div>
+                        <div className="w-full max-w-xs mx-auto">
+                            <input
+                                type="text"
+                                readOnly
+                                value={userAnswer}
+                                className="text-4xl sm:text-5xl text-center font-bold w-full p-4 bg-gray-100 dark:bg-dark-subtle dark:border-2 dark:border-slate-600 rounded-2xl"
+                                placeholder="?"
+                            />
+                        </div>
                     </div>
                 </div>
             </main>
 
             <aside className="w-full md:max-w-sm flex-shrink-0">
-                <div className="relative bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col h-full">
+                <div className="relative bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm p-6 rounded-3xl shadow-lg flex flex-col justify-center">
                     <SidebarToggleButton />
-                    <div className="flex-grow flex flex-col justify-center">
-                        <NumberPad onNumberClick={handleAnswer} onBackspace={() => setUserAnswer(prev => prev.slice(0, -1))} />
-                    </div>
+                    <NumberPad 
+                        onNumberClick={handleAnswer} 
+                        onDeleteClick={handleDelete}
+                        pressedKey={pressedKey}
+                    />
                 </div>
             </aside>
         </div>
@@ -347,81 +406,54 @@ const DailySpeedChallenge: React.FC<{ onComplete: () => void; onFailure: () => v
 };
 
 const DailyDecompositionChallenge: React.FC<{ onComplete: () => void; onFailure: () => void; topics: Topic[] }> = ({ onComplete, onFailure, topics }) => {
-    const [topic, setTopic] = useState(() => topics[Math.floor(Math.random() * topics.length)]);
-    const [key, setKey] = useState(0);
-
-    const handleInternalComplete = () => {
-        onComplete();
-        setTopic(topics[Math.floor(Math.random() * topics.length)]);
-        setKey(prev => prev + 1);
-    };
+    const topic = useMemo(() => topics[Math.floor(Math.random() * topics.length)], [topics]);
 
     const handleInternalFailure = () => {
         onFailure();
-        setTopic(topics[Math.floor(Math.random() * topics.length)]);
-        setKey(prev => prev + 1);
     };
     
     return (
-        <div className="flex-grow flex flex-col" key={key}>
+        <div className="flex flex-col">
             {topic.exerciseMode === ExerciseMode.StagedDecompositionSubtraction && (
-                <StagedDecompositionGame topic={topic} gradeId="grade-3" isDailyChallenge onComplete={handleInternalComplete} onFailure={handleInternalFailure} />
+                <StagedDecompositionGame topic={topic} gradeId="grade-3" operation="subtraction" isDailyChallenge onComplete={onComplete} onFailure={handleInternalFailure} />
             )}
             {topic.exerciseMode === ExerciseMode.StagedDecompositionAddition && (
-                <StagedDecompositionGame topic={topic} gradeId="grade-3" isDailyChallenge onComplete={handleInternalComplete} onFailure={handleInternalFailure} />
+                <StagedDecompositionGame topic={topic} gradeId="grade-3" operation="addition" isDailyChallenge onComplete={onComplete} onFailure={handleInternalFailure} />
             )}
             {topic.exerciseMode === ExerciseMode.PedagogicalDecompositionMultiplication && (
-                <MultiplicationDecompositionGame topic={topic} gradeId="grade-3" isDailyChallenge onComplete={handleInternalComplete} onFailure={handleInternalFailure} />
+                <MultiplicationDecompositionGame topic={topic} gradeId="grade-3" isDailyChallenge onComplete={onComplete} onFailure={handleInternalFailure} />
             )}
             {topic.exerciseMode === ExerciseMode.PedagogicalDecompositionDivision && (
-                <DivisionDecompositionGame topic={topic} gradeId="grade-3" isDailyChallenge onComplete={handleInternalComplete} onFailure={handleInternalFailure} />
+                <DivisionDecompositionGame topic={topic} gradeId="grade-3" isDailyChallenge onComplete={onComplete} onFailure={handleInternalFailure} />
             )}
         </div>
     );
 };
 
 const DailyStandardChallenge: React.FC<{ onComplete: () => void; onFailure: () => void; topics: Topic[]; sidebarPosition: 'left' | 'right' }> = ({ onComplete, onFailure, topics }) => {
-    const [topic, setTopic] = useState(() => topics[Math.floor(Math.random() * topics.length)]);
-    const [key, setKey] = useState(0);
-
-    const handleInternalComplete = () => {
-        onComplete();
-        setTopic(topics[Math.floor(Math.random() * topics.length)]);
-        setKey(prev => prev + 1);
-    };
+    const topic = useMemo(() => topics[Math.floor(Math.random() * topics.length)], [topics]);
 
     const handleInternalFailure = () => {
         onFailure();
-        setTopic(topics[Math.floor(Math.random() * topics.length)]);
-        setKey(prev => prev + 1);
     };
     
     return (
-        <div className="flex-grow flex flex-col" key={key}>
-            <StandardExercise topic={topic} gradeId="grade-3" isDailyChallenge onComplete={handleInternalComplete} onFailure={handleInternalFailure} />
+        <div className="flex flex-col">
+            <StandardExercise topic={topic} gradeId="grade-3" isDailyChallenge onComplete={onComplete} onFailure={handleInternalFailure} />
         </div>
     );
 };
 
 const DailyCluesChallenge: React.FC<{ onComplete: () => void; onFailure: () => void; topics: Topic[] }> = ({ onComplete, onFailure, topics }) => {
-    const [topic, setTopic] = useState(() => topics[Math.floor(Math.random() * topics.length)]);
-    const [key, setKey] = useState(0);
-
-    const handleInternalComplete = () => {
-        onComplete();
-        setTopic(topics[Math.floor(Math.random() * topics.length)]);
-        setKey(prev => prev + 1);
-    };
+    const topic = useMemo(() => topics[Math.floor(Math.random() * topics.length)], [topics]);
 
     const handleInternalFailure = () => {
         onFailure();
-        setTopic(topics[Math.floor(Math.random() * topics.length)]);
-        setKey(prev => prev + 1);
     };
     
     return (
-        <div className="flex-grow flex flex-col" key={key}>
-            <ReasoningGauntletPage topic={topic} gradeId="grade-3" isDailyChallenge onComplete={handleInternalComplete} onFailure={handleInternalFailure} />
+        <div className="flex flex-col">
+            <ReasoningGauntletPage topic={topic} gradeId="grade-3" isDailyChallenge onComplete={onComplete} onFailure={handleInternalFailure} />
         </div>
     );
 };

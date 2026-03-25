@@ -11,7 +11,7 @@ const StatusBar: React.FC = () => {
 
   return (
     <footer className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm shadow-[0_-2px_10px_rgba(0,0,0,0.1)] z-20">
-      <div className="px-2 h-16 relative flex justify-between items-center">
+      <div className="px-2 h-12 md:h-16 relative flex justify-between items-center">
         {/* Left element */}
         <div className="z-10">
           {isTestMode && (

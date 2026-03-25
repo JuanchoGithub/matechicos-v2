@@ -114,6 +114,8 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
     }, [currentStep, correctFinalAnswer]);
 
     useEffect(() => {
+        if (isDailyChallenge) return;
+        
         const header = (
             <StageProgressBar
                 stages={STAGES_CONFIG}
@@ -122,8 +124,10 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
             />
         );
         setHeaderContent(header);
-        return () => clearHeaderContent();
-    }, [stageIndex, progressInStage, setHeaderContent, clearHeaderContent]);
+        return () => {
+            if (!isDailyChallenge) clearHeaderContent();
+        };
+    }, [stageIndex, progressInStage, setHeaderContent, clearHeaderContent, isDailyChallenge]);
 
     const handleNextProblem = () => {
         setFeedback(null);
@@ -368,7 +372,7 @@ const MultiplicationDecompositionGame: React.FC<MultiplicationDecompositionGameP
             </main>
 
             <aside className="w-full md:max-w-sm flex-shrink-0">
-                <div className="relative bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm p-4 md:p-6 rounded-3xl shadow-lg flex flex-col h-full">
+                <div className="relative bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm p-4 md:p-6 rounded-3xl shadow-lg flex flex-col">
                     <SidebarToggleButton />
                     <div className="flex-grow flex flex-col justify-center">
                         <NumberPad

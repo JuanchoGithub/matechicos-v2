@@ -201,6 +201,8 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
     }, [stageIndex, setupProblem]);
     
     useEffect(() => {
+        if (isDailyChallenge) return;
+        
         const headerComponent = (
             <div className="flex justify-between items-center w-full">
                 <h1 className="text-xl md:text-2xl font-bold text-white tracking-wider">División Larga por Pasos</h1>
@@ -214,8 +216,10 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
             </div>
         );
         setHeaderContent(headerComponent);
-        return () => clearHeaderContent();
-    }, [stageIndex, progressInStage, setHeaderContent, clearHeaderContent]);
+        return () => {
+            if (!isDailyChallenge) clearHeaderContent();
+        };
+    }, [stageIndex, progressInStage, setHeaderContent, clearHeaderContent, isDailyChallenge]);
 
     const handleNextProblem = () => {
         setFeedback(null);
@@ -519,7 +523,7 @@ const DivisionDecompositionGame: React.FC<DivisionDecompositionGameProps> = ({ t
                 </div>
             </main>
             <aside className="w-full md:max-w-sm flex-shrink-0">
-                <div className="relative bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm p-1 md:p-6 rounded-3xl shadow-lg flex flex-col h-full">
+                <div className="relative bg-white/80 dark:bg-dark-surface/80 backdrop-blur-sm p-1 md:p-6 rounded-3xl shadow-lg flex flex-col">
                     <SidebarToggleButton />
                     <div className="flex flex-col justify-start md:justify-center md:flex-grow">
                         <NumberPad onNumberClick={handleNumberPadClick} onDeleteClick={handleDeleteClick} />
